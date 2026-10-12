@@ -1,0 +1,518 @@
+/* ==========================================================================
+   PHONE BANDHU - OFFICIAL BRAND PALETTE & STYLES (100% FIXED & UPGRADED)
+   ========================================================================== */
+
+:root {
+    --primary-color: #022449;    /* आपके लोगो का डार्क नेवी ब्लू */
+    --accent-color: #d1aa4a;     /* आपके लोगो का गोल्डन पीला */
+    --dark-color: #0a141f;       
+    --light-bg: #f4f7fa;         
+    --white: #ffffff;
+    --border-color: #cbd5e1;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--light-bg);
+    color: var(--dark-color);
+    line-height: 1.6;
+}
+
+/* --- NAVBAR HEADER --- */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 5%;
+    background-color: var(--white);
+    border-bottom: 2px solid var(--primary-color);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    min-width: 220px; 
+}
+
+.brand-logo {
+    height: 45px;
+    width: 45px;
+    object-fit: contain;
+    border-radius: 50%;
+}
+
+.logo-text {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    white-space: nowrap;
+}
+
+.logo-text span {
+    color: var(--accent-color);
+}
+
+.nav-links {
+    display: flex;
+    list-style: none;
+    gap: 2rem;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: #475569;
+    font-weight: 600;
+    transition: color 0.3s;
+    white-space: nowrap;
+}
+
+.nav-links a:hover, .nav-links a.active {
+    color: var(--accent-color);
+}
+
+.nav-buttons {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 200px;
+    justify-content: flex-end;
+}
+
+/* --- GLOBAL BUTTONS --- */
+.btn {
+    padding: 0.6rem 1.4rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    font-family: inherit;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: var(--white);
+    border: 1px solid var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: #01142a;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    color: var(--primary-color);
+    background-color: #f1f5f9; 
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background-color: #e2e8f0;
+}
+
+.btn-outline {
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    background: transparent;
+}
+
+.btn-outline:hover {
+    background-color: var(--primary-color);
+    color: var(--white);
+}
+
+.btn-large {
+    padding: 0.8rem 2rem;
+    font-size: 1rem;
+}
+
+.btn-full {
+    display: block;
+    text-align: center;
+    margin-top: 1rem;
+    width: 100%;
+}
+
+/* --- BANNER DISPLAY SYSTEM --- */
+.banner-section {
+    padding: 2rem 5% 0 5%;
+}
+
+.banner-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border-color);
+    background-color: var(--white);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.brand-banner {
+    width: 100%;
+    height: 320px;          
+    object-fit: contain;    
+    padding: 1rem;
+    background-color: var(--white);
+}
+
+/* --- HERO TEXT SECTION --- */
+.hero {
+    background: linear-gradient(180deg, var(--white) 0%, #e2e8f0 100%);
+    padding: 4rem 5%;
+    text-align: center;
+}
+
+.hero-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.hero h1 {
+    font-size: 2.8rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+}
+
+.hero h1 span {
+    color: var(--accent-color);
+}
+
+.hero p {
+    font-size: 1.2rem;
+    color: #334155;
+    margin-bottom: 2rem;
+}
+
+.hero-cta {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+/* --- INTERACTIVE SEARCH & CHIP FILTERS --- */
+.search-filter-section {
+    background-color: var(--white);
+    padding: 2rem;
+    border: 2px solid var(--primary-color);
+    max-width: 1200px;
+    margin: -1.5rem auto 0 auto;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+.search-container {
+    margin-bottom: 1.5rem;
+}
+
+#searchInput {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    font-size: 1.05rem;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    background-color: #f8fafc;
+}
+
+#searchInput:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(209, 170, 74, 0.2);
+}
+
+.brand-filter-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.filter-label {
+    font-weight: 600;
+    color: #64748b;
+}
+
+.brand-chips {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.chip {
+    background-color: #e2e8f0;
+    color: var(--primary-color);
+    border: none;
+    padding: 0.5rem 1.25rem;
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.chip.active, .chip:hover {
+    background-color: var(--primary-color);
+    color: var(--white);
+}
+
+/* --- PRODUCT MARKETPLACE CARDS --- */
+.listings {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 4rem 5%;
+}
+
+.listings h2 {
+    color: var(--primary-color);
+    margin-bottom: 2rem;
+    font-size: 1.75rem;
+}
+
+.listings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+}
+
+.phone-card {
+    background: var(--white);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    transition: all 0.3s ease;
+}
+
+.phone-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--accent-color);
+    box-shadow: 0 10px 20px rgba(2, 36, 73, 0.05);
+}
+
+/* 🌟 FIX: Background को वाइट किया ताकि इमेज कटे नहीं */
+.brand-mock-img {
+    height: 220px;
+    background-color: #ffffff; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border-color);
+    padding: 12px;
+}
+
+/* 🌟 FIX: Contain प्रॉपर्टी लगाई ताकि इमेज खींचे बिना बॉक्स में सेट बैठे */
+.brand-mock-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.inner-phone-box {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+    border-radius: 8px;
+}
+
+.screen-logo {
+    color: #64748b;
+    font-weight: 700;
+    font-size: 2rem;
+    letter-spacing: 1px;
+}
+
+.phone-info {
+    padding: 1.2rem;
+}
+
+.phone-info h3 {
+    font-size: 1.2rem;
+    margin-bottom: 0.25rem;
+}
+
+.phone-meta {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-bottom: 1rem;
+}
+
+.phone-price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.price {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #0d9488;
+}
+
+.location {
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+/* ==========================================================================
+   P2P POPUP MODAL FORMS
+   ========================================================================== */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 20, 31, 0.6);
+    backdrop-filter: blur(4px);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-box {
+    background: var(--white);
+    padding: 1.5rem;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 620px;
+    max-height: 85vh; 
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; 
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+    flex-shrink: 0; 
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    font-size: 1.75rem;
+    cursor: pointer;
+    color: #94a3b8;
+}
+
+/* फ़ॉर्म स्क्रॉल कंटेनर */
+.modal-box form {
+    display: block;
+    overflow-y: auto; 
+    padding-right: 10px;
+    flex-grow: 1;
+}
+
+.modal-box form::-webkit-scrollbar {
+    width: 6px;
+}
+.modal-box form::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+.modal-box form::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+.modal-box form::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 0.4rem;
+    color: #475569;
+}
+
+input, select {
+    width: 100%;
+    padding: 0.65rem 0.8rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: #f8fafc;
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: var(--dark-color);
+    transition: all 0.2s;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background-color: var(--white);
+    box-shadow: 0 0 0 3px rgba(2, 36, 73, 0.1);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #64748b;
+}
+
+/* --- FOOTER --- */
+footer {
+    background-color: var(--primary-color);
+    color: var(--white);
+    text-align: center;
+    padding: 1.5rem;
+    margin-top: 4rem;
+}
+
+/* --- RESPONSIVE MOBILE VIEWPORTS --- */
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    .nav-buttons {
+        justify-content: center;
+        width: 100%;
+    }
+    .hero h1 {
+        font-size: 2rem;
+    }
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+}

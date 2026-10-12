@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phone Bandhu | Log In</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://googleapis.com" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: #f8fafc; color: #0f172a; min-height: 100vh; display: flex; flex-direction: column; }
+        
+        /* Navigation Header */
+        .navbar { background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 1rem 5%; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        .logo-container { display: flex; align-items: center; gap: 10px; text-decoration: none; cursor: pointer; }
+        .brand-logo { height: 40px; width: 40px; object-fit: cover; border-radius: 6px; }
+        .logo-text { font-size: 1.4rem; font-weight: 800; color: #022449; }
+        .logo-text span { color: #0d9488; }
+        .btn-nav { padding: 0.5rem 1.2rem; border-radius: 6px; font-weight: 600; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569; text-decoration: none; font-size: 0.9rem; transition: background 0.2s; }
+        .btn-nav:hover { background: #cbd5e1; }
+
+        /* Auth UI Wrapper */
+        .auth-wrapper { min-height: calc(100vh - 140px); display: flex; justify-content: center; align-items: center; padding: 2rem 5%; background: linear-gradient(135deg, #f4f7fa 0%, #e2e8f0 100%); flex-grow: 1; }
+        .auth-container { background-color: #ffffff; width: 100%; max-width: 420px; padding: 2.5rem; border-radius: 16px; box-shadow: 0 10px 30px rgba(2, 36, 73, 0.08); border: 1px solid #e2e8f0; text-align: center; }
+        .auth-logo { height: 55px; width: 55px; object-fit: contain; margin-bottom: 0.75rem; border-radius: 8px; }
+        .auth-container h2 { color: #022449; font-size: 1.6rem; margin-bottom: 0.25rem; font-weight: 700; }
+        .auth-subtitle { color: #64748b; font-size: 0.9rem; margin-bottom: 2rem; font-weight: 500; }
+        
+        /* Form Styling Elements */
+        .auth-form { text-align: left; }
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 6px; }
+        .form-group input { width: 100%; padding: 0.75rem 1rem; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; background: #f8fafc; font-size: 0.95rem; transition: all 0.2s; }
+        .form-group input:focus { border-color: #0d9488; background: #ffffff; box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1); }
+        
+        .form-options { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; margin-bottom: 1.5rem; }
+        .remember-me { display: flex; align-items: center; gap: 0.4rem; color: #475569; cursor: pointer; font-weight: 500; }
+        .remember-me input { width: auto; cursor: pointer; }
+        
+        .forgot-pass { color: #0d9488; text-decoration: none; font-weight: 600; background: none; border: none; font-size: 0.85rem; cursor: pointer; }
+        .forgot-pass:hover { text-decoration: underline; color: #0a706e; }
+        
+        .btn-full { padding: 0.8rem; font-size: 1rem; background-color: #022449; color: #ffffff; border: none; border-radius: 8px; width: 100%; font-weight: 700; cursor: pointer; transition: background 0.2s; margin-top: 0.5rem; box-shadow: 0 4px 6px rgba(2, 36, 73, 0.15); }
+        .btn-full:hover { background-color: #01142a; }
+        .switch-link { margin-top: 1.5rem; font-size: 0.9rem; color: #64748b; font-weight: 500; }
+        .switch-link a { color: #022449; font-weight: 600; text-decoration: none; }
+        .switch-link a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="logo-container" onclick="window.location.href='index.html'">
+            <img src="logo.png.jpg" alt="Phone Bandhu Logo" class="brand-logo">
+            <div class="logo-text">Phone<span>Bandhu</span></div>
+        </div>
+        <div class="nav-buttons"><a href="index.html" class="btn-nav">Back to Home</a></div>
+    </header>
+
+    <main class="auth-wrapper">
+        <div class="auth-container">
+            <img src="logo.png.jpg" alt="Phone Bandhu Branding" class="auth-logo">
+            <h2>Welcome Back</h2>
+            <p class="auth-subtitle">सपनों का phone, जेब के हिसाब से</p>
+
+            <form id="loginForm" class="auth-form" onsubmit="event.preventDefault();">
+                <div class="form-group">
+                    <label for="loginEmail">Email Address</label>
+                    <input type="email" id="loginEmail" placeholder="name@example.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <div style="position: relative; display: flex; align-items: center;">
+                        <input type="password" id="loginPassword" placeholder="••••••••" style="padding-right: 2.5rem;" required>
+                        <span id="toggleLoginPassword" style="position: absolute; right: 12px; cursor: pointer; font-size: 1.1rem; user-select: none; color: #64748b;">👁️</span>
+                    </div>
+                </div>
+
+                <div class="form-options">
+                    <label class="remember-me"><input type="checkbox"> Remember me</label>
+                    <!-- 📬 Hooked directly to recovery workflow system trigger -->
+                    <button type="button" class="forgot-pass" onclick="triggerForgotPasswordSystem()">Forgot Password?</button>
+                </div>
+                <button type="button" onclick="executeDatabaseLogin()" class="btn-full">Secure Login</button>
+            </form>
+            
+            <div class="switch-link">
+                Don't have an account? <a href="signup.html">Sign Up here</a>
+            </div>
+        </div>
+    </main>
+
+    <!-- ⚡ Database & Simulation Recover Connectors Script Engine -->
+    <script>
+        const API_BASE = `${location.protocol === 'file:' || location.port === '5500' ? 'http://localhost:5200' : location.origin}/api`;
+        // 👁️ Live Input Visibility Masking Toggler
+        document.getElementById('toggleLoginPassword')?.addEventListener('click', function() {
+            const passwordInput = document.getElementById('loginPassword');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                this.innerText = '🔒';
+            } else {
+                passwordInput.type = 'password';
+                this.innerText = '👁️';
+            }
+        });
+
+        // 🔐 Core Database User Authentication API Caller
+        async function executeDatabaseLogin() {
+            const emailInput = document.getElementById('loginEmail').value.trim();
+            const passwordInput = document.getElementById('loginPassword').value.trim();
+
+            if (!emailInput || !passwordInput) {
+                alert("⚠️ Please fill in both email and password fields!");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: emailInput, password: passwordInput })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(`🎉 ${result.message || 'Login successful!'}`);
+                    localStorage.setItem('currentUser', JSON.stringify(result.user));
+                    const guestCartKey = 'phoneBandhu_cart_guest';
+                    const signedInCartKey = `phoneBandhu_cart_${encodeURIComponent(String(result.user.email || '').trim().toLowerCase())}`;
+                    try {
+                        const guestCart = JSON.parse(localStorage.getItem(guestCartKey) || '[]');
+                        const signedInCart = JSON.parse(localStorage.getItem(signedInCartKey) || '[]');
+                        localStorage.setItem(signedInCartKey, JSON.stringify([...new Set([...signedInCart, ...guestCart])]));
+                        localStorage.removeItem(guestCartKey);
+                    } catch {}
+                    window.location.href = sessionStorage.getItem('phoneBandhuReturnTo') || 'index.html';
+                    sessionStorage.removeItem('phoneBandhuReturnTo');
+                } else {
+                    alert(`⚠️ ${result.message || 'Invalid email or password!'}`);
+                }
+            } catch (error) {
+                console.error('Login system engine fault:', error);
+                alert('🔌 Connection error! Please ensure your backend Node server is running.');
+            }
+        }
+
+        // 📬 Real-time Secure Email Recovery Link Generator Pipeline
+        async function triggerForgotPasswordSystem() {
+            const emailInput = document.getElementById('loginEmail').value.trim();
+
+            if (!emailInput) {
+                alert("⚠️ Please enter your registered email address in the box above first, then click Forgot Password!");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/forgot-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: emailInput })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(`🎉 ${result.message}`);
+                } else {
+                    alert(`⚠️ ${result.message || 'Password reset request failed!'}`);
+                }
+            } catch (error) {
+                console.error('Recovery tracking gateway failure:', error);
+                alert('🔌 Connection error! Please verify your backend server is active.');
+            }
+        }
+
+        const recoveryParams = new URLSearchParams(location.search);
+        const recoveryEmail = recoveryParams.get('email');
+        if (recoveryEmail) document.getElementById('loginEmail').value = recoveryEmail;
+        if (recoveryParams.get('mode') === 'forgot' && recoveryEmail) triggerForgotPasswordSystem();
+    </script>
+</body>
+</html>

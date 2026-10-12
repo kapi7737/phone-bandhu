@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#082b50">
+  <title>Your cart | PhoneBandhu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#f4f7fa;color:#17283b;font-family:'DM Sans',sans-serif}.topbar{height:76px;background:#fff;border-bottom:1px solid #e3eaf1;display:flex;align-items:center;justify-content:space-between;padding:0 max(calc((100vw - 1160px)/2),5%)}.brand{display:flex;align-items:center;gap:10px;color:#082b50;text-decoration:none;font-size:1.2rem;font-weight:800}.brand img{width:44px;height:44px;object-fit:cover;border-radius:50%}.brand strong{color:#c5a34d}.topbar a.back{color:#304862;text-decoration:none;font-size:.88rem;font-weight:800}.wrap{max-width:1160px;margin:42px auto;padding:0 24px}.eyebrow{color:#9a762b;font-size:.72rem;font-weight:900;letter-spacing:.14em}.heading h1{margin:6px 0;color:#082b50;font-size:2rem}.heading p{margin:0;color:#718096}.layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:22px;margin-top:24px;align-items:start}.panel{background:white;border:1px solid #e2e9f0;border-radius:18px;box-shadow:0 8px 28px #082b5008}.items{padding:20px}.item{display:grid;grid-template-columns:104px minmax(0,1fr) auto;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid #edf1f5}.item:first-child{padding-top:0}.item:last-child{border-bottom:0;padding-bottom:0}.item img{width:104px;height:96px;object-fit:contain;border-radius:12px;background:#f5f7fa}.item h2{margin:0;color:#082b50;font-size:1.02rem}.item p{margin:5px 0;color:#718096;font-size:.8rem}.item .price{color:#0d887d;font-weight:900}.remove{border:1px solid #f0d9dc;border-radius:8px;background:#fff;color:#a33240;padding:8px 10px;cursor:pointer;font-weight:800;font-size:.75rem}.summary{padding:22px;position:sticky;top:20px}.summary h2{margin:0 0 20px;color:#082b50;font-size:1.08rem}.line,.total{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #edf1f5;color:#61748a;font-size:.88rem}.line b,.total b{color:#082b50}.total{border:0;margin:5px 0 14px;color:#082b50;font-weight:800;font-size:1rem}.checkout{display:block;width:100%;padding:13px;border:0;border-radius:10px;background:#082b50;color:white;font-size:.94rem;font-weight:800;cursor:pointer}.checkout:disabled{opacity:.45;cursor:not-allowed}.secure{margin:13px 0 0;color:#718096;font-size:.73rem;text-align:center}.empty{padding:50px 24px;text-align:center}.empty b{display:block;color:#082b50;font-size:1.15rem}.empty p{color:#718096}.empty a{display:inline-flex;margin-top:8px;padding:10px 15px;border-radius:9px;background:#082b50;color:white;text-decoration:none;font-weight:800}.message{padding:16px;color:#718096}.footer{padding:28px 0;text-align:center;color:#6b7b8e;font-size:.78rem}
+    @media(max-width:780px){.wrap{margin:28px auto;padding:0 16px}.layout{grid-template-columns:1fr}.summary{position:static}.item{grid-template-columns:76px minmax(0,1fr) auto;gap:10px}.item img{width:76px;height:76px}.item h2{font-size:.9rem}.remove{padding:7px;font-size:.68rem}.topbar{height:66px;padding:0 16px}}
+  </style>
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="index.html"><img src="logo.png.jpg" alt=""><span>Phone<strong>Bandhu</strong></span></a><a class="back" href="index.html#marketplaceView">Continue shopping</a></header>
+  <main class="wrap">
+    <div class="heading"><span class="eyebrow">PHONEBANDHU CART</span><h1>Your saved phones</h1><p>Each refurbished phone is a unique listing. We’ll confirm availability at checkout.</p></div>
+    <div class="layout"><section class="panel items" id="cartItems"><p class="message">Loading your cart…</p></section>
+      <aside class="panel summary"><h2>Order summary</h2><div class="line"><span>Items</span><b id="cartItemCount">0</b></div><div class="line"><span>Delivery</span><b style="color:#0d887d">FREE</b></div><div class="total"><span>Total</span><b id="cartTotal">₹0</b></div><button class="checkout" id="checkoutCart" disabled>Proceed to secure checkout</button><p class="secure">🔒 Free delivery · 6-month PhoneBandhu warranty</p></aside>
+    </div>
+    <footer class="footer">PhoneBandhu · सपनों का फ़ोन, जेब के हिसाब से</footer>
+  </main>
+  <script src="cart.js?v=20261012-account-cart-1"></script>
+</body>
+</html>

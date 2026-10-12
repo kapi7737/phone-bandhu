@@ -1,0 +1,18 @@
+# Local credentials and environment files
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# Installed dependencies and local runtime output
+node_modules/
+backend/node_modules/
+backend/db-startup*.log
+npm-debug.log*
+
+# Local editor and OS files
+.vscode/
+.DS_Store
+Thumbs.db

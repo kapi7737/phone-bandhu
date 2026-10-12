@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phone Bandhu | Admin Control Room</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://googleapis.com" rel="stylesheet">
+    <style>
+        .admin-wrapper { padding: 3rem 5%; max-width: 1200px; margin: 0 auto; }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 2px solid var(--primary-color); padding-bottom: 1rem; }
+        .admin-header h1 { color: var(--primary-color); }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; }
+        .stat-card { background: var(--white); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-color); text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        .stat-card h3 { color: #64748b; font-size: 1rem; margin-bottom: 0.5rem; }
+        .stat-card .number { font-size: 2.2rem; font-weight: 700; color: var(--primary-color); }
+        .data-section { background: var(--white); padding: 2rem; border-radius: 16px; border: 1px solid var(--border-color); margin-bottom: 3rem; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+        .data-section h2 { color: var(--primary-color); margin-bottom: 1.5rem; font-size: 1.4rem; display: flex; justify-content: space-between; align-items: center; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 1rem; border-bottom: 1px solid var(--border-color); font-size: 0.95rem; }
+        th { background-color: #f8fafc; color: var(--primary-color); font-weight: 700; }
+        .btn-delete { background-color: #ef4444; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: background 0.2s; }
+        .btn-delete:hover { background-color: #dc2626; }
+        .btn-approve { background-color: #059669; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: background 0.2s; }
+        .btn-approve:hover { background-color: #047857; }
+        .admin-upload-box { grid-column:1/-1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; min-height:104px; padding:18px; border:2px dashed #9bb0c7; border-radius:12px; background:#f8fbff; color:#022449; text-align:center; cursor:pointer; transition:.2s; }
+        .admin-upload-box:hover,.admin-upload-box.is-dragging { border-color:#d1aa4a; background:#fff9eb; }
+        .admin-upload-box strong { font-size:.96rem; }
+        .admin-upload-box small { color:#64748b; }
+        .admin-upload-box input { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
+        .admin-image-preview { grid-column:1/-1; display:grid; grid-template-columns:repeat(auto-fill,minmax(105px,1fr)); gap:10px; }
+        .admin-image-preview:empty { display:none; }
+        .admin-image-tile { min-width:0; padding:7px; border:1px solid #e2e8f0; border-radius:10px; background:white; }
+        .admin-image-tile img { display:block; width:100%; height:82px; object-fit:cover; border-radius:6px; background:#f1f5f9; }
+        .admin-image-tile span { display:block; overflow:hidden; margin-top:5px; color:#475569; font-size:.7rem; text-overflow:ellipsis; white-space:nowrap; }
+    </style>
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="logo-container" style="cursor: pointer;" onclick="window.location.href='index.html'">
+            <img src="logo.png.jpg" alt="Phone Bandhu Logo" class="brand-logo">
+            <div class="logo-text">Phone<span>Bandhu</span> Central Control</div>
+        </div>
+        <div class="nav-buttons"><a href="index.html" class="btn btn-primary">Go to Website</a></div>
+    </header>
+
+    <main class="admin-wrapper">
+        <div class="admin-header">
+            <h1>PhoneBandhu Inventory Dashboard</h1>
+            <p style="color: #059669; font-weight: 600;">🔒 PhoneBandhu Business Mode Active</p>
+        </div>
+
+        <!-- 📊 Live Business KPI Dashboard Analytics Counters -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Inventory Stock</h3>
+                <div class="number" id="countPhones">0</div>
+            </div>
+            <div class="stat-card"><h3>New Buyback Requests</h3><div class="number" id="countBuybacks">0</div></div>
+            <div class="stat-card">
+                <h3>New Customer Orders</h3>
+                <div class="number" id="countOrders">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Registered Users</h3>
+                <div class="number" id="countUsers">0</div>
+            </div>
+        </div>
+
+        <!-- PhoneBandhu doorstep customer order management -->
+        <div class="data-section" style="border-left: 5px solid #d1aa4a;">
+            <h2>📦 Incoming Customer Purchases (📦 ग्राहक के ऑर्डर्स)</h2>
+            <form id="adminPhoneForm" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:24px;">
+                <input name="brand" placeholder="Brand" required>
+                <input name="model" placeholder="Model" required>
+                <input name="price" type="number" min="1" placeholder="Price (₹)" required>
+                <input name="location" placeholder="Location" required>
+                <input name="condition" placeholder="Condition" required>
+                <label id="adminImageDropzone" class="admin-upload-box" for="adminPhoneImages">
+                    <strong>＋ Add phone photos</strong>
+                    <span>Drop images here or click to choose multiple files</span>
+                    <small>In the file picker, hold Ctrl or Shift to select several photos</small>
+                    <small>Choose up to 6 photos at once · JPG, PNG or WebP · max 1 MB each</small>
+                    <input id="adminPhoneImages" name="images" type="file" accept="image/*" multiple>
+                </label>
+                <div id="adminImagePreview" class="admin-image-preview"></div>
+                <button class="btn btn-primary" type="submit">Add phone to catalog</button>
+            </form>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Product Details</th>
+                            <th>Customer Info</th>
+                            <th>Shipping Address</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminOrdersTable">
+                        <tr><td colspan="5" style="text-align:center; color:#64748b;">No orders placed yet.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="data-section" style="border-left:5px solid #059669;">
+            <h2>✅ Delivered Orders</h2>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead><tr><th>Order ID</th><th>Product</th><th>Customer</th><th>Delivery Address</th><th>Status</th></tr></thead>
+                    <tbody id="adminDeliveredOrdersTable"><tr><td colspan="5">Loading delivered orders...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- सेक्शन 1: लाइव स्टॉक/इन्वेंट्री डिस्ट्रीब्यूशन पैनल -->
+        <div class="data-section" style="border-left:5px solid #0d9488;">
+            <h2>Phone Buyback Requests</h2>
+            <p style="color:#64748b;margin:-8px 0 16px;">Seller photos, contact and pickup details for phones awaiting inspection.</p>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead><tr><th>Phone</th><th>Estimate</th><th>Photos</th><th>Seller contact</th><th>Pickup address</th><th>Reported condition</th><th>Status / action</th></tr></thead>
+                    <tbody id="adminBuybackRequestsTable"><tr><td colspan="7">Loading buyback requests...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="data-section">
+            <h2>📱 Manage Live Sales Inventory Stock</h2>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Model</th>
+                            <th>Brand</th>
+                            <th>Selling Price</th>
+                            <th>Stock Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminPhonesTable">
+                        <tr><td colspan="6" style="text-align:center; color:#64748b;">Loading sales stock catalog...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- सेक्शन 2: डेटाबेस यूज़र्स ट्रैकिंग लिस्ट -->
+        <div class="data-section">
+            <h2>👥 Registered Bandhu Users</h2>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>PhoneBandhu ID</th>
+                            <th>Mobile</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminUsersTable">
+                        <tr><td colspan="5" style="text-align:center; color:#64748b;">Loading users list catalog...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+    <!-- PhoneBandhu live data sync -->
+    <script type="text/plain" id="legacyAdminDashboard">
+        function loadAdminDashboard() {
+            try {
+                // 1. सेल्स इन्वेंट्री स्टॉक फेच करना
+                let phones = JSON.parse(localStorage.getItem('phoneListings')) || [];
+                document.getElementById('countPhones').innerText = phones.length;
+
+                const phonesTable = document.getElementById('adminPhonesTable');
+                if (phonesTable) {
+                    phonesTable.innerHTML = '';
+                    if (phones.length === 0) {
+                        phonesTable.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#64748b;">स्टॉक में कोई फोन उपलब्ध नहीं है।</td></tr>';
+                    } else {
+                        phones.forEach(phone => {
+                            const tr = document.createElement('tr');
+                            let displayPrice = phone.expectedPrice ? parseInt(phone.expectedPrice).toLocaleString('en-IN') : '0';
+                            
+                            tr.innerHTML = `
+                                <td>📱 Refurbished</td>
+                                <td><b>${phone.model || 'Unknown Model'}</b><br><small style="color:#64748b">Brand: ${phone.brand || 'N/A'} | Condition: ${phone.condition || 'Inspected'}</small></td>
+                                <td>${phone.brand || 'N/A'}</td>
+                                <td style="color:#0d9488; font-weight:700">₹${displayPrice}</td>
+                                <td><span style="background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:12px; font-size:0.8rem; font-weight:700;">In Stock</span></td>
+                                <td><button class="btn-delete" onclick="deletePhone(${phone.id})">Remove Stock</button></td>
+                            `;
+                            phonesTable.appendChild(tr);
+                        });
+                    }
+                }
+
+                // 2. ग्राहकों के एक्टिव ऑर्डर्स सिंक और रेंडर करना (Purchases Monitor)
+                let orders = JSON.parse(localStorage.getItem('phoneBandhuOrders')) || [];
+                document.getElementById('countOrders').innerText = orders.length;
+
+                const ordersTable = document.getElementById('adminOrdersTable');
+                if (ordersTable) {
+                    ordersTable.innerHTML = '';
+                    if (orders.length === 0) {
+                        ordersTable.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#64748b;">अभी तक कोई नया ऑर्डर नहीं आया है।</td></tr>';
+                    } else {
+                        orders.forEach((order, index) => {
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td><small style="color:#64748b; font-weight:700;">${order.orderId}</small></td>
+                                <td><b>${order.product}</b><br><span style="color:#0d9488; font-weight:700;">${order.price}</span></td>
+                                <td>👤 ${order.customerName}<br>📞 ${order.customerPhone}</td>
+                                <td>📍 ${order.address} - <b>${order.pincode}</b><br><small style="color:#1e40af; font-weight:700;">${order.status}</small></td>
+                                <td>
+                                    <button class="btn-approve" onclick="dispatchOrder(${index})" style="margin-bottom:4px; display:block; width:100%;">Dispatch</button>
+                                    <button class="btn-delete" onclick="cancelOrder(${index})" style="display:block; width:100%;">Cancel</button>
+                                </td>
+                            `;
+                            ordersTable.appendChild(tr);
+                        });
+                    }
+                }
+
+                // 3. सीधे MongoDB से लाइव यूज़र्स डेटा फेच करना
+                fetch('http://localhost:5000/api/admin/users')
+                    .then(res => res.json())
+                    .then(users => {
+                        document.getElementById('countUsers').innerText = users.length;
+                        const usersTable = document.getElementById('adminUsersTable');
+                        if (usersTable) {
+                            usersTable.innerHTML = '';
+                            if (users.length === 0) {
+                                usersTable.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#64748b;">कोई रजिस्टर्ड यूजर नहीं मिला।</td></tr>';
+                            } else {
+                                users.forEach(user => {
+                                    const tr = document.createElement('tr');
+                                    tr.innerHTML = `
+                                        <td><b>${user.name || 'N/A'}</b></td>
+                                        <td>${user.email || 'N/A'}</td>
+                                        <td>${user.phone || 'N/A'}</td>
+                                        <td><button class="btn-delete" onclick="deleteUserDatabase('${user._id}')">Remove User</button></td>
+                                    `;
+                                    usersTable.appendChild(tr);
+                                });
+                            }
+                        }
+                    })
+                    .catch(err => console.error("Error fetching live users from cloud pipeline:", err));
+
+            } catch (err) {
+                console.error("Dashboard layout component query error logs:", err);
+            }
+        }
+
+        // 📦 कूरियर डिस्पैच पाइपलाइन एक्शन
+        window.dispatchOrder = function(index) {
+            let orders = JSON.parse(localStorage.getItem('phoneBandhuOrders')) || [];
+            alert(`🚀 Order ${orders[index].orderId} को सफलतापूर्वक डिस्पैच कर दिया गया है! कूरियर पार्टनर को नोटिफिकेशन ट्रैक भेज दिया गया है।`);
+            orders[index].status = "Shipped (In Transit)";
+            localStorage.setItem('phoneBandhuOrders', JSON.stringify(orders));
+            loadAdminDashboard();
+        }
+
+        // 🗑️ ग्राहक का ऑर्डर कैंसिल/रिजेक्ट एक्शन
+        window.cancelOrder = function(index) {
+            if (confirm("क्या आप वाकई इस कस्टमर का ऑर्डर रिजेक्ट/कैंसिल करना चाहते हैं?")) {
+                let orders = JSON.parse(localStorage.getItem('phoneBandhuOrders')) || [];
+                orders.splice(index, 1);
+                localStorage.setItem('phoneBandhuOrders', JSON.stringify(orders));
+                loadAdminDashboard();
+            }
+        }
+
+        // 🗑️ सेल्स इन्वेंट्री स्टॉक रिमूवल एक्शन 
+        function deletePhone(id) {
+            if (confirm("क्या आप वाकई इस फोन को सेल्स इन्वेंट्री स्टॉक से हटाना चाहते हैं?")) {
+                let phones = JSON.parse(localStorage.getItem('phoneListings')) || [];
+                phones = phones.filter(phone => phone.id !== id);
+                localStorage.setItem('phoneListings', JSON.stringify(phones));
+                loadAdminDashboard();
+            }
+        }
+
+        // 🗑️ सीधे MongoDB क्लाउड से यूजर डिलीट रिमूवल एक्शन
+        async function deleteUserDatabase(id) {
+            if (confirm("क्या आप वाकई इस यूजर को डेटाबेस से हमेशा के लिए हटाना चाहते हैं?")) {
+                try {
+                    const response = await fetch(`http://localhost:5000/api/admin/users/${id}`, { method: 'DELETE' });
+                    const result = await response.json();
+                    alert(result.message || "User data deleted successfully!");
+                    loadAdminDashboard();
+                } catch (error) {
+                    alert("यूजर डिलीट करने में क्लाउड डेटाबेस सर्वर एरर आया!");
+                }
+            }
+        }
+    </script>
+    <script src="admin.js?v=20261012-phonebandhu-brand-1"></script>
+    <script>loadAdminDashboard();</script>
+</body>
+</html>

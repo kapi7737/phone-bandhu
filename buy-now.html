@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#082b50"><title>Secure checkout | PhoneBandhu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="buy-now.css">
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="index.html"><img src="logo.png.jpg" alt=""><span>Phone<strong>Bandhu</strong></span></a><div class="secure"><span>●</span> Secure checkout</div></header>
+  <main class="wrap">
+    <a class="back" href="index.html">← Continue shopping</a>
+    <div class="heading"><p class="eyebrow">PHONEBANDHU CHECKOUT</p><h1>Almost yours.</h1><p>Just a few details and your inspected phone is on its way.</p></div>
+    <div class="layout">
+      <form id="checkoutForm" class="panel details">
+        <section><div class="section-title"><span class="step">1</span><div><h2>Delivery details</h2><p>Where should we deliver your phone?</p></div></div>
+          <div class="fields"><label class="full">Full name<input id="name" autocomplete="name" required placeholder="Name on the delivery"></label>
+          <label>Mobile number<input id="phone" inputmode="numeric" autocomplete="tel" pattern="[0-9]{10}" maxlength="10" required placeholder="10 digit number"></label>
+          <label>Pincode<input id="pincode" inputmode="numeric" autocomplete="postal-code" pattern="[0-9]{6}" maxlength="6" required placeholder="6 digit pincode"></label>
+          <label class="full">Delivery address<textarea id="address" autocomplete="street-address" rows="3" required placeholder="House / flat, street, area, city"></textarea></label></div>
+        </section>
+        <section class="pay-section"><div class="section-title"><span class="step">2</span><div><h2>Payment method</h2><p>Choose what works for you.</p></div></div>
+          <label class="method selected"><input type="radio" name="paymentMethod" value="online" checked><span class="method-icon online-icon">↗</span><span class="method-copy"><b>Pay online</b><small>UPI, cards, netbanking & wallets</small></span><span class="method-badge">Instant & secure</span></label>
+          <label class="method"><input type="radio" name="paymentMethod" value="cod"><span class="method-icon cod-icon">₹</span><span class="method-copy"><b>Cash on delivery</b><small>Pay when your phone arrives</small></span></label>
+          <p id="gatewayNote" class="gateway-note" hidden>Online payment is being set up. Please choose Cash on delivery for now.</p>
+        </section>
+        <button class="submit" id="submitBtn" type="submit">Continue to payment <span>→</span></button>
+        <p class="safe-note">🔒 Your details are protected. Card and UPI payments are handled by Razorpay.</p>
+        <p id="message" class="message" role="status"></p>
+      </form>
+      <aside class="panel summary"><div class="summary-head"><h2>Order summary</h2><span>1 item</span></div><div class="product"><div class="product-art"><img src="logo.png.jpg" alt="PhoneBandhu"></div><div><span class="tag">INSPECTED REFURBISHED</span><h3 id="productName">Your selected phone</h3><p>6 month PhoneBandhu warranty</p></div></div><div class="line"><span>Item price</span><b id="itemPrice">₹0</b></div><div class="line"><span>Delivery</span><b class="free">FREE</b></div><div class="total"><span>Total payable</span><b id="totalPrice">₹0</b></div><div class="promise"><span>✓</span><div><b>Buy with confidence</b><small>Quality checked · Secure payments · Free delivery</small></div></div></aside>
+    </div>
+    <footer>PhoneBandhu · सपनों का फ़ोन, जेब के हिसाब से <a href="index.html">Back to shop</a></footer>
+  </main>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script><script src="buy-now.js"></script>
+</body></html>
