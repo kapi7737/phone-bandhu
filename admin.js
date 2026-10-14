@@ -1,18 +1,27 @@
-const ADMIN_API_ORIGIN = location.protocol === 'file:' || location.port === '5500' ? 'http://localhost:5200' : location.origin;
+const ADMIN_API_ORIGIN = location.protocol === 'file:' ? 'http://localhost:5200' : location.port === '5500' ? `${location.protocol}//${location.hostname}:5200` : location.origin;
 const ADMIN_API = `${ADMIN_API_ORIGIN}/api`;
+let currentAdminRole = 'admin';
 
 async function adminFetchJson(url, options) {
-    const response = await fetch(url, options);
+    const response = await fetch(url, { credentials: 'include', ...options });
     const contentType = response.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
         throw new Error(response.status === 404 ? 'Admin API route missing. Restart the backend server and refresh this page.' : 'Backend returned an HTML error page. Confirm the backend is running on port 5200.');
     }
     const data = await response.json();
-    if (!response.ok) throw new Error(data.message || `Backend error (${response.status}).`);
+    if (!response.ok) {
+        if (response.status === 401 && !/\/admin\/(login|session)$/.test(url)) showAdminLogin('Your administrator session has expired. Please sign in again.');
+        throw new Error(data.message || `Backend error (${response.status}).`);
+    }
     return data;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    document.querySelector('main.admin-wrapper').hidden = true;
+    document.getElementById('adminLoginPanel').hidden = false;
+    document.getElementById('adminLoginForm')?.addEventListener('submit', submitAdminLogin);
+    document.getElementById('adminLogoutBtn')?.addEventListener('click', signOutAdmin);
+    document.getElementById('createAdminForm')?.addEventListener('submit', createManagedAdmin);
     const form = document.getElementById('adminPhoneForm');
     if (form) {
         const inventory = document.getElementById('adminPhonesTable')?.closest('.data-section');
@@ -36,7 +45,54 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     refreshBackendStatus();
     setInterval(refreshBackendStatus, 10000);
+    checkAdminSession();
 });
+
+function showAdminLogin(message = '') {
+    document.querySelector('main.admin-wrapper').hidden = true;
+    document.getElementById('adminLoginPanel').hidden = false;
+    document.getElementById('adminLogoutBtn').hidden = true;
+    document.getElementById('adminLoginMessage').textContent = message;
+}
+
+async function checkAdminSession() {
+    try {
+        const session = await adminFetchJson(`${ADMIN_API}/admin/session`);
+        currentAdminRole = session.role;
+        document.getElementById('adminLoginPanel').hidden = true;
+        document.querySelector('main.admin-wrapper').hidden = false;
+        document.getElementById('adminLogoutBtn').hidden = false;
+        const masterTools = document.getElementById('masterAdminTools');
+        if (masterTools) masterTools.hidden = currentAdminRole !== 'master';
+        await loadAdminDashboard();
+    } catch (error) {
+        showAdminLogin(error.message.includes('locked') || error.message.includes('Database') ? error.message : 'Sign in with the administrator credentials configured in backend/.env.');
+    }
+}
+
+async function submitAdminLogin(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector('[type="submit"]');
+    const message = document.getElementById('adminLoginMessage');
+    button.disabled = true;
+    message.textContent = '';
+    try {
+        await adminFetchJson(`${ADMIN_API}/admin/login`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: document.getElementById('adminLoginEmail').value.trim(), password: document.getElementById('adminLoginPassword').value })
+        });
+        form.reset();
+        await checkAdminSession();
+    } catch (error) { message.textContent = error.message; }
+    finally { button.disabled = false; }
+}
+
+async function signOutAdmin() {
+    try { await adminFetchJson(`${ADMIN_API}/admin/logout`, { method: 'POST' }); }
+    catch {}
+    showAdminLogin('You have signed out.');
+}
 
 let adminPreviewUrls = [];
 function renderAdminImagePreview(fileList) {
@@ -80,9 +136,9 @@ async function refreshBackendStatus() {
         } else {
             const detail = health.databaseError || (health.database === 'connecting' ? 'Waiting for the database connection attempt to finish.' : 'No connection error details are available yet.');
             let nextStep = 'The server will retry automatically.';
-            if (/querySrv.*ETIMEOUT|querySrv.*ETIMEDOUT/i.test(detail)) nextStep = 'This computer cannot complete the MongoDB Atlas DNS lookup. Check its DNS/internet connection and the MONGO_URI host in backend/.env. The server retries automatically.';
-            else if (/MongoServerSelectionError|ETIMEDOUT|ENOTFOUND|ECONNREFUSED/i.test(detail)) nextStep = 'Check Atlas Network Access for this computer current IP, confirm the cluster is running, and check the internet connection. The server retries automatically.';
-            else if (/Authentication failed|bad auth|MongoServerError/i.test(detail)) nextStep = 'Check the database username/password and database user permissions in backend/.env, then restart the backend.';
+            if (health.databaseIssue === 'dns' || /querySrv.*ETIMEOUT|querySrv.*ETIMEDOUT/i.test(detail)) nextStep = 'This computer cannot complete the MongoDB Atlas DNS lookup. Check its DNS/internet connection and the MONGO_URI host in backend/.env. The server retries automatically.';
+            else if (health.databaseIssue === 'network-access' || /MongoServerSelectionError|ETIMEDOUT|ENOTFOUND|ECONNREFUSED/i.test(detail)) nextStep = 'Check Atlas Network Access for this computer current IP, confirm the cluster is running, and check the internet connection. The server retries automatically.';
+            else if (health.databaseIssue === 'auth' || /Authentication failed|bad auth|MongoServerError/i.test(detail)) nextStep = 'Check the database username/password and database user permissions in backend/.env, then restart the backend.';
             banner.textContent = `PhoneBandhu backend :5200 online | Database ${health.database}. ${detail} ${nextStep}`;
             banner.style.cssText += ';background:#fef3c7;color:#92400e';
         }
@@ -94,6 +150,15 @@ async function refreshBackendStatus() {
 
 function adminEscape(value) {
     return String(value || '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+}
+
+function adminSafeImage(value) {
+    const raw = String(value || '');
+    if (/^data:image\/(jpeg|png|webp);base64,[a-z0-9+/]+=*$/i.test(raw)) return raw;
+    try {
+        const url = new URL(raw, location.origin);
+        return url.protocol === 'https:' || url.origin === location.origin ? url.href : '';
+    } catch { return ''; }
 }
 
 function imageAsDataUrl(file) {
@@ -141,7 +206,7 @@ async function loadAdminDashboard() {
         document.getElementById('countBuybacks').textContent = buybackRequests.length;
         phonesTable.innerHTML = phones.length ? '' : '<tr><td colspan="6">No catalog stock listed yet.</td></tr>';
         phones.forEach(phone => {
-            const images = phone.images?.length ? phone.images : (phone.image ? [phone.image] : []);
+            const images = (phone.images?.length ? phone.images : (phone.image ? [phone.image] : [])).map(adminSafeImage).filter(Boolean);
             const row = document.createElement('tr');
             row.innerHTML = `<td>${images.length} image${images.length === 1 ? '' : 's'}</td><td><b>${adminEscape(phone.model)}</b><br><small>${adminEscape(phone.condition || '')}</small></td><td>${adminEscape(phone.brand)}</td><td>₹${Number(phone.price || phone.expectedPrice || 0).toLocaleString('en-IN')}</td><td>${adminEscape(phone.status || 'Available')}</td><td><button class="btn-delete">Remove</button></td>`;
             row.querySelector('button').addEventListener('click', () => deletePhoneFromCatalog(phone._id));
@@ -149,14 +214,27 @@ async function loadAdminDashboard() {
         });
         buybacksTable.innerHTML = buybackRequests.length ? '' : '<tr><td colspan="7">No buyback requests awaiting inspection.</td></tr>';
         buybackRequests.forEach(phone => {
-            const images = phone.images?.length ? phone.images : (phone.image ? [phone.image] : []);
+            const images = (phone.images?.length ? phone.images : (phone.image ? [phone.image] : [])).map(adminSafeImage).filter(Boolean);
             const gallery = images.length ? `<details><summary>View ${images.length} photo${images.length === 1 ? '' : 's'}</summary><div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:8px">${images.map((src,index) => `<a href="${adminEscape(src)}" target="_blank" rel="noopener"><img src="${adminEscape(src)}" alt="${adminEscape(phone.model)} photo ${index + 1}" style="width:82px;height:82px;object-fit:cover;border-radius:7px;border:1px solid #dce5ef"></a>`).join('')}</div></details>` : 'No photos';
             const issues = Object.entries(phone.issues || {}).filter(([, value]) => value).map(([key]) => key.replace(/([A-Z])/g, ' $1').toLowerCase());
             const issueText = issues.length ? issues.join(', ') : 'No issues reported';
             const row = document.createElement('tr');
-            const priceDisplay = Number(phone.price || 0) > 0 ? `₹${Number(phone.price).toLocaleString('en-IN')}<br><small>PhoneBandhu estimate; pending inspection</small>` : '<b>Manual valuation needed</b>';
-            row.innerHTML = `<td><b>${adminEscape(phone.brand)} ${adminEscape(phone.model)}</b><br><small>${adminEscape(phone.storage || '')} · ${adminEscape(phone.age || '')}</small></td><td><strong style="color:#0d9488">${priceDisplay}</strong></td><td>${gallery}</td><td><b>${adminEscape(phone.sellerName || 'Seller')}</b><br><a href="tel:${adminEscape(phone.sellerPhone)}">${adminEscape(phone.sellerPhone)}</a><br><a href="mailto:${adminEscape(phone.sellerEmail)}">${adminEscape(phone.sellerEmail)}</a></td><td>${adminEscape(phone.location)} · <b>${adminEscape(phone.sellerPincode)}</b><br><small>${adminEscape(phone.pickupAddress)}</small></td><td>${adminEscape(issueText)}</td><td>${adminEscape(phone.status || 'Pending Valuation Approval')}<br><button class="btn-delete" style="margin-top:6px">Remove request</button></td>`;
-            row.querySelector('button').addEventListener('click', () => deletePhoneFromCatalog(phone._id));
+            const offerPrice = Number(phone.offerPrice || 0);
+            const priceDisplay = offerPrice > 0
+                ? `<strong>Final offer: ₹${offerPrice.toLocaleString('en-IN')}</strong>`
+                : Number(phone.price || 0) > 0 ? `Indicative estimate: ₹${Number(phone.price).toLocaleString('en-IN')}` : '<b>Manual valuation needed</b>';
+            const nextAction = phone.status === 'Pending Valuation Approval'
+                ? '<button class="btn-approve" data-action="inspect">Start inspection</button>'
+                : phone.status === 'Inspection In Progress'
+                    ? '<button class="btn-approve" data-action="offer">Record final offer</button>'
+                    : phone.status === 'Offer Accepted'
+                        ? '<button class="btn-approve" data-action="received">Confirm received &amp; paid</button>'
+                        : '';
+            row.innerHTML = `<td><b>${adminEscape(phone.brand)} ${adminEscape(phone.model)}</b><br><small>${adminEscape(phone.storage || '')} · ${adminEscape(phone.age || '')}</small></td><td><strong style="color:#0d9488">${priceDisplay}</strong></td><td>${gallery}</td><td><b>${adminEscape(phone.sellerName || 'Seller')}</b><br><a href="tel:${adminEscape(phone.sellerPhone)}">${adminEscape(phone.sellerPhone)}</a><br><a href="mailto:${adminEscape(phone.sellerEmail)}">${adminEscape(phone.sellerEmail)}</a></td><td>${adminEscape(phone.location)} · <b>${adminEscape(phone.sellerPincode)}</b><br><small>${adminEscape(phone.pickupAddress)}</small></td><td>${adminEscape(issueText)}</td><td><b>${adminEscape(phone.status || 'Pending Valuation Approval')}</b><br>${nextAction ? `${nextAction}<br>` : ''}<button class="btn-delete" data-action="remove" style="margin-top:6px">Remove request</button></td>`;
+            row.querySelector('[data-action="inspect"]')?.addEventListener('click', () => updateBuybackStatus(phone, 'start_inspection'));
+            row.querySelector('[data-action="offer"]')?.addEventListener('click', () => sendBuybackOffer(phone));
+            row.querySelector('[data-action="received"]')?.addEventListener('click', () => updateBuybackStatus(phone, 'confirm_received_paid'));
+            row.querySelector('[data-action="remove"]').addEventListener('click', () => deletePhoneFromCatalog(phone._id));
             buybacksTable.appendChild(row);
         });
     } else {
@@ -206,6 +284,65 @@ async function loadAdminDashboard() {
         ordersTable.innerHTML = `<tr><td colspan="5">${adminEscape(ordersResult.reason?.message || 'Could not load orders.')}</td></tr>`;
         deliveredTable.innerHTML = `<tr><td colspan="5">${adminEscape(ordersResult.reason?.message || 'Could not load delivered orders.')}</td></tr>`;
     }
+
+    const masterTools = document.getElementById('masterAdminTools');
+    if (currentAdminRole === 'master' && masterTools && !masterTools.hidden) await loadMasterAdminTools();
+}
+
+async function loadMasterAdminTools() {
+    const [adminsResult, auditResult] = await Promise.allSettled([
+        adminFetchJson(`${ADMIN_API}/admin/admins`),
+        adminFetchJson(`${ADMIN_API}/admin/audit`)
+    ]);
+    const adminsTable = document.getElementById('managedAdminsTable');
+    if (adminsResult.status === 'fulfilled') {
+        const admins = adminsResult.value;
+        adminsTable.innerHTML = admins.length ? '' : '<tr><td colspan="5">No additional admin accounts yet.</td></tr>';
+        admins.forEach(admin => {
+            const row = document.createElement('tr');
+            const actionButtons = `<a class="btn-approve" style="display:inline-block;text-decoration:none" href="admin-password-reset.html?admin=${encodeURIComponent(admin._id)}">Reset password</a> ` + (admin.status === 'pending'
+                ? '<button class="btn-approve" data-status="approved">Approve</button><button class="btn-delete" data-status="rejected">Reject</button>'
+                : admin.status === 'approved'
+                    ? '<button class="btn-delete" data-status="disabled">Disable</button>'
+                    : '<button class="btn-approve" data-status="approved">Approve</button>');
+            row.innerHTML = `<td>${adminEscape(admin.email)}</td><td>${adminEscape(admin.status)}</td><td>${adminEscape(new Date(admin.createdAt).toLocaleString())}</td><td>${adminEscape(admin.approvedBy || '—')}</td><td>${actionButtons}</td>`;
+            row.querySelectorAll('[data-status]').forEach(button => button.addEventListener('click', () => updateManagedAdminStatus(admin._id, button.dataset.status)));
+            adminsTable.appendChild(row);
+        });
+    } else adminsTable.innerHTML = `<tr><td colspan="5">${adminEscape(adminsResult.reason?.message || 'Could not load admins.')}</td></tr>`;
+
+    const auditTable = document.getElementById('adminAuditTable');
+    if (auditResult.status === 'fulfilled') {
+        const logs = auditResult.value;
+        auditTable.innerHTML = logs.length ? '' : '<tr><td colspan="5">No admin changes recorded yet.</td></tr>';
+        logs.forEach(log => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${adminEscape(new Date(log.createdAt).toLocaleString())}</td><td><b>${adminEscape(log.actorEmail)}</b><br><small>${adminEscape(log.actorRole)}</small></td><td>${adminEscape(log.action)}</td><td>${adminEscape(log.targetType)}<br><small>${adminEscape(log.targetId)}</small></td><td>${adminEscape(JSON.stringify(log.details || {}))}</td>`;
+            auditTable.appendChild(row);
+        });
+    } else auditTable.innerHTML = `<tr><td colspan="5">${adminEscape(auditResult.reason?.message || 'Could not load audit logs.')}</td></tr>`;
+}
+
+async function createManagedAdmin(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const message = document.getElementById('adminManagementMessage');
+    try {
+        const result = await adminFetchJson(`${ADMIN_API}/admin/admins`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: document.getElementById('newAdminEmail').value.trim(), password: document.getElementById('newAdminPassword').value })
+        });
+        form.reset();
+        message.textContent = result.message;
+        await loadMasterAdminTools();
+    } catch (error) { message.textContent = error.message; }
+}
+
+async function updateManagedAdminStatus(id, status) {
+    try {
+        await adminFetchJson(`${ADMIN_API}/admin/admins/${encodeURIComponent(id)}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
+        await loadMasterAdminTools();
+    } catch (error) { alert(error.message); }
 }
 
 async function updateOrderStatus(orderId, status) {
@@ -219,6 +356,26 @@ async function deletePhoneFromCatalog(id) {
     if (!confirm('Remove this phone from the catalog?')) return;
     try { await adminFetchJson(`${ADMIN_API}/admin/phones/${id}`, { method: 'DELETE' }); loadAdminDashboard(); }
     catch (error) { alert(error.message); }
+}
+
+async function updateBuybackStatus(phone, action, price) {
+    if (action === 'confirm_received_paid' && !confirm('Confirm karein ki phone PhoneBandhu ko mil chuka hai aur seller ko payment bhej di gayi hai? Iske baad listing website par live hogi.')) return;
+    try {
+        await adminFetchJson(`${ADMIN_API}/admin/phones/${encodeURIComponent(phone._id)}/buyback`, {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, price })
+        });
+        await loadAdminDashboard();
+    } catch (error) { alert(error.message); }
+}
+
+async function sendBuybackOffer(phone) {
+    const initial = Number(phone.price || 0);
+    const entered = prompt('Inspection ke baad seller ko dene wala final offer (₹) enter karein:', initial > 0 ? String(initial) : '');
+    if (entered === null) return;
+    const price = Number(entered);
+    if (!Number.isFinite(price) || price <= 0 || price > 1000000) return alert('Offer ₹1 se ₹10,00,000 ke beech hona chahiye.');
+    if (!confirm(`₹${price.toLocaleString('en-IN')} ka final offer seller ke account mein record karein? Offer record karne ke baad seller ko contact karke batayein.`)) return;
+    await updateBuybackStatus(phone, 'send_offer', price);
 }
 
 async function deleteUserFromDatabase(id) {

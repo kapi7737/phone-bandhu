@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://cdn.socket.io; connect-src 'self' http://localhost:5200 http://127.0.0.1:5200 ws://localhost:5200 ws://127.0.0.1:5200 https://api.razorpay.com https://checkout.razorpay.com; frame-src https://*.razorpay.com">
   <meta name="theme-color" content="#082b50"><title>Secure checkout | PhoneBandhu</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -13,7 +13,7 @@
     <a class="back" href="index.html">← Continue shopping</a>
     <div class="heading"><p class="eyebrow">PHONEBANDHU CHECKOUT</p><h1>Almost yours.</h1><p>Just a few details and your inspected phone is on its way.</p></div>
     <div class="layout">
-      <form id="checkoutForm" class="panel details">
+      <form id="checkoutForm" class="panel details" method="post">
         <section><div class="section-title"><span class="step">1</span><div><h2>Delivery details</h2><p>Where should we deliver your phone?</p></div></div>
           <div class="fields"><label class="full">Full name<input id="name" autocomplete="name" required placeholder="Name on the delivery"></label>
           <label>Mobile number<input id="phone" inputmode="numeric" autocomplete="tel" pattern="[0-9]{10}" maxlength="10" required placeholder="10 digit number"></label>

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://cdn.socket.io; connect-src 'self' http://localhost:5200 http://127.0.0.1:5200 ws://localhost:5200 ws://127.0.0.1:5200 https://api.razorpay.com https://checkout.razorpay.com; frame-src https://*.razorpay.com">
     <title>Phone Bandhu | Sign Up</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://googleapis.com" rel="stylesheet">
@@ -42,7 +43,7 @@
             <h2>Create Account</h2>
             <p class="auth-subtitle">सपनों का फोन, जेब के हिसाब से</p>
 
-            <form id="registerForm" class="auth-form" onsubmit="handleSignUpSubmit(event)">
+            <form id="registerForm" class="auth-form" method="post" onsubmit="handleSignUpSubmit(event)">
                 <div class="form-group">
                     <label for="regName">Full Name</label>
                     <input type="text" id="regName" placeholder="e.g., John Doe" required>
@@ -60,15 +61,15 @@
                     <label for="regPassword">Create Password</label>
                     <div style="position: relative; display: flex; align-items: center;">
                         <input type="password" id="regPassword" 
-                               placeholder="Minimum 8 characters" 
-                               pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#\$%^&+=!]).{8,}"
-                               title="Password must contain at least 8 characters, including one uppercase letter, one lowercase letter, one number, and one special character."
+                               placeholder="Minimum 12 characters" minlength="12" maxlength="72"
+                               pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#\$%^&+=!]).{12,}"
+                               title="Use at least 12 characters, including uppercase, lowercase, a number, and a special character."
                                style="padding-right: 2.5rem;" required>
                         <span id="toggleSignupPassword" style="position: absolute; right: 12px; cursor: pointer; font-size: 1.1rem; user-select: none; color: #64748b;">👁️</span>
                     </div>
                     <div class="password-hints">
                         🛡️ <b>Maturity Policy Checklist:</b><br>
-                        • At least <b>8 characters long</b><br>
+                        • At least <b>12 characters long</b><br>
                         • Mix of <b>Uppercase (A-Z)</b> & <b>Lowercase (a-z)</b><br>
                         • Include at least one <b>Number (0-9)</b><br>
                         • Include one <b>Special character (@, #, \$, etc.)</b>
@@ -86,7 +87,8 @@
 
     <script src="script.js"></script>
     <script>
-        const API_BASE = `${location.protocol === 'file:' || location.port === '5500' ? 'http://localhost:5200' : location.origin}/api`;
+        const API_ORIGIN = location.protocol === 'file:' ? 'http://localhost:5200' : location.port === '5500' ? `${location.protocol}//${location.hostname}:5200` : location.origin;
+        const API_BASE = `${API_ORIGIN}/api`;
         // 👁️ पासवर्ड शो/हाइड लॉजिक
         document.getElementById('toggleSignupPassword')?.addEventListener('click', function() {
             const passwordInput = document.getElementById('regPassword');
@@ -112,6 +114,7 @@
             try {
                 const response = await fetch(`${API_BASE}/auth/signup`, {
                     method: 'POST',
+                    credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(regData)
                 });

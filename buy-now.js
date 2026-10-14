@@ -1,4 +1,5 @@
-const API = `${window.location.protocol === 'file:' || window.location.port === '5500' ? 'http://localhost:5200' : window.location.origin}/api`;
+const API_ORIGIN = window.location.protocol === 'file:' ? 'http://localhost:5200' : window.location.port === '5500' ? `${window.location.protocol}//${window.location.hostname}:5200` : window.location.origin;
+const API = `${API_ORIGIN}/api`;
 const form = document.getElementById('checkoutForm');
 const message = document.getElementById('message');
 const submit = document.getElementById('submitBtn');
@@ -36,7 +37,7 @@ document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => radio.
 }));
 
 async function jsonRequest(url, body) {
-  const response = await fetch(`${API}${url}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const response = await fetch(`${API}${url}`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.message || 'Could not complete your request.');
   return data;

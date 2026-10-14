@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://cdn.socket.io; connect-src 'self' http://localhost:5200 http://127.0.0.1:5200 ws://localhost:5200 ws://127.0.0.1:5200 https://api.razorpay.com https://checkout.razorpay.com; frame-src https://*.razorpay.com">
     <title>Phone Bandhu | Buy & Sell Certified Refurbished Phones</title>
     <meta name="theme-color" content="#082b50">
     <meta name="description" content="Find quality checked refurbished phones at PhoneBandhu. Shop confidently with warranty protection and free delivery.">
@@ -187,6 +188,8 @@
         .logo-text { letter-spacing:-.6px; }.logo-text span { color:var(--accent-color); }
         .home-links { display:flex; gap:28px; align-items:center; }
         .home-links a { color:#526176; text-decoration:none; font-size:.9rem; font-weight:700; }
+        .home-links button { padding:0; border:0; color:#526176; background:transparent; font:inherit; font-size:.9rem; font-weight:700; cursor:pointer; }
+        .home-links button:focus-visible,.chip:focus-visible,.catalog-filter-controls select:focus-visible,.account-buyback-actions button:focus-visible { outline:3px solid #d2ad58; outline-offset:2px; }
         .home-links a:hover { color:var(--secondary-color); }
         .btn { border-radius:9px; }.btn-primary { background:var(--primary-color); }.btn-secondary { background:#fff; color:var(--primary-color); border-color:#dce3eb; }
         .hero-banner { background:linear-gradient(115deg,#082b50 0%,#0b3b68 67%,#0b4c5b 100%); padding:68px max(calc((100vw - 1160px)/2),5%) 64px; text-align:left; }
@@ -206,12 +209,25 @@
         .trust-strip { background:#fff; border-bottom:1px solid var(--border-color); }.trust-inner { max-width:1160px; margin:auto; padding:18px 5%; display:grid; grid-template-columns:repeat(3,1fr); gap:15px; }
         .trust-item { display:flex; align-items:center; justify-content:center; gap:10px; color:#35465a; font-size:.83rem; font-weight:700; }.trust-icon { display:grid; place-items:center; width:34px; height:34px; border-radius:10px; color:var(--secondary-color); background:#eaf6f4; font-weight:900; }
         .marketplace-control-container { max-width:1160px; padding-top:36px; }.catalog-heading { display:flex; justify-content:space-between; align-items:end; margin-bottom:18px; }.catalog-heading h2 { color:var(--primary-color); font-size:1.65rem; letter-spacing:-.6px; }.catalog-heading p { color:var(--text-light); font-size:.9rem; margin-top:4px; }
-        .search-bar-wrapper { box-shadow:none; margin-bottom:18px; }.search-bar-wrapper input { padding:14px 18px; background:#fff; }
-        .chips-scroll-bar { gap:8px; }.chip { border-radius:9px; padding:.55rem 1rem; }.chip.active { background:var(--primary-color); border-color:var(--primary-color); box-shadow:none; }
+        .search-bar-wrapper { box-shadow:none; margin-bottom:12px; }.search-bar-wrapper input { padding:14px 18px; background:#fff; }
+        .chips-scroll-bar { gap:8px; margin-bottom:12px; }.chip { border-radius:9px; padding:.55rem 1rem; }.chip.active { background:var(--primary-color); border-color:var(--primary-color); box-shadow:none; }
+        .catalog-filter-row { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:22px; color:#64748b; font-size:.82rem; }
+        .catalog-filter-controls { display:flex; align-items:center; gap:9px; }
+        .catalog-filter-controls label { display:flex; align-items:center; gap:7px; color:#526176; font-weight:700; }
+        .catalog-filter-controls select { min-height:40px; padding:8px 30px 8px 10px; border:1px solid #dce3eb; border-radius:9px; color:#243b53; background:#fff; font:inherit; }
+        .catalog-result-count { color:#64748b; font-weight:700; }
+        .account-buyback-card { padding:12px; border:1px solid #e2e8f0; border-radius:12px; background:#fff; }
+        .account-buyback-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+        .account-buyback-top strong { color:#082b50; font-size:.92rem; }
+        .account-buyback-card p { margin:9px 0 4px; color:#0d7d70; font-weight:800; }
+        .account-buyback-card small { display:block; color:#64748b; line-height:1.5; }
+        .account-buyback-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:11px; }
+        .account-buyback-actions button { padding:9px 12px; border:1px solid #dce5ef; border-radius:8px; background:#fff; color:#082b50; font-weight:800; cursor:pointer; }
+        .account-buyback-actions .account-buyback-accept { background:#0d887d; color:#fff; border-color:#0d887d; }
         .stock-status { display:inline-block; color:var(--secondary-color); font-size:.78rem; font-weight:700; margin-left:5px; }
         .main-marketplace-view { max-width:1160px; }.empty-alert-box { margin-bottom:32px; }.brand-card-image { background:linear-gradient(145deg,#f3f6f9,#fff)!important; }
         .site-footer { background:var(--primary-color); color:#d3deeb; margin-top:20px; padding:30px 5%; }.footer-inner { max-width:1160px; margin:auto; display:flex; justify-content:space-between; align-items:center; gap:18px; }.footer-brand { display:flex; align-items:center; gap:10px; font-weight:800; color:#fff; }.footer-brand img { height:38px; width:38px; border-radius:50%; }.site-footer p { font-size:.8rem; margin:4px 0 0; color:#b9c8d8; }.footer-links { display:flex; gap:20px; }.footer-links a { color:#fff; text-decoration:none; font-size:.83rem; font-weight:700; }
-        @media(max-width:780px) { .home-links { display:none; }.navbar { flex-direction:row; text-align:left; padding:10px 5%; }.nav-buttons { width:auto; min-width:0; gap:7px; }.nav-buttons .btn { padding:.55rem .8rem; font-size:.82rem; }.hero-banner { padding:48px 6% 38px; }.hero-inner { grid-template-columns:1fr; gap:20px; }.hero-art { min-height:0; }.hero-promo-card { width:100%; border-radius:16px; }.hero-banner h1 { font-size:2.45rem; }.trust-inner { grid-template-columns:1fr; gap:10px; padding:16px 5%; }.trust-item { justify-content:flex-start; }.marketplace-control-container { padding-top:26px; }.catalog-heading { align-items:flex-start; flex-direction:column; gap:5px; }.footer-inner { flex-direction:column; align-items:flex-start; }.footer-links { flex-wrap:wrap; } }
+        @media(max-width:780px) { .home-links { display:none; }.navbar { flex-direction:row; text-align:left; padding:10px 5%; }.nav-buttons { width:auto; min-width:0; gap:7px; }.nav-buttons .btn { padding:.55rem .8rem; font-size:.82rem; }.hero-banner { padding:48px 6% 38px; }.hero-inner { grid-template-columns:1fr; gap:20px; }.hero-art { min-height:0; }.hero-promo-card { width:100%; border-radius:16px; }.hero-banner h1 { font-size:2.45rem; }.trust-inner { grid-template-columns:1fr; gap:10px; padding:16px 5%; }.trust-item { justify-content:flex-start; }.marketplace-control-container { padding-top:26px; }.catalog-heading { align-items:flex-start; flex-direction:column; gap:5px; }.catalog-filter-row { align-items:flex-start; flex-direction:column; }.catalog-filter-controls { width:100%; display:grid; grid-template-columns:1fr 1fr; }.catalog-filter-controls label { align-items:flex-start; flex-direction:column; gap:5px; }.catalog-filter-controls select { width:100%; }.footer-inner { flex-direction:column; align-items:flex-start; }.footer-links { flex-wrap:wrap; } }
     </style>
 </head>
 <body>
@@ -222,7 +238,7 @@
             <img src="logo.png.jpg" alt="Phone Bandhu Logo" class="brand-logo">
             <div class="logo-text">Phone<span>Bandhu</span></div>
         </a>
-        <nav class="home-links" aria-label="Main navigation"><a href="#marketplaceView">Shop phones</a><a href="#why-phonebandhu">Why PhoneBandhu</a></nav>
+        <nav class="home-links" aria-label="Main navigation"><a href="#marketplaceView">Shop phones</a><a href="#why-phonebandhu">Why PhoneBandhu</a><button type="button" id="navSellPhoneBtn">Sell your phone</button></nav>
         <div class="nav-buttons" id="navAuthContainer">
             <a href="signup.html" class="btn btn-secondary">Sign Up</a>
             <a href="auth.html" class="btn btn-primary">Login</a>
@@ -256,14 +272,21 @@
     <div class="marketplace-control-container" id="marketplaceView">
         <div class="catalog-heading"><div><h2>Find your next phone</h2><p>Handpicked phones, checked and ready for a new home. <span id="stockStatus" class="stock-status">Connecting to live stock…</span></p></div></div>
         <div class="search-bar-wrapper">
-            <input type="text" id="searchInput" placeholder="Search by brand name, model variants or location specs...">
+            <input type="search" id="searchInput" aria-label="Search phones" placeholder="Search by model, brand, storage or city…" autocomplete="off">
         </div>
         <div class="chips-scroll-bar">
-            <div class="chip active" data-brand="all">All Smartphones</div>
-            <div class="chip" data-brand="iPhone">Apple iPhone</div>
-            <div class="chip" data-brand="Samsung">Samsung Galaxy</div>
-            <div class="chip" data-brand="OnePlus">OnePlus Premium</div>
-            <div class="chip" data-brand="Xiaomi">Xiaomi / Redmi</div>
+            <button type="button" class="chip active" aria-pressed="true" data-brand="all">All phones</button>
+            <button type="button" class="chip" aria-pressed="false" data-brand="iPhone">Apple iPhone</button>
+            <button type="button" class="chip" aria-pressed="false" data-brand="Samsung">Samsung Galaxy</button>
+            <button type="button" class="chip" aria-pressed="false" data-brand="OnePlus">OnePlus</button>
+            <button type="button" class="chip" aria-pressed="false" data-brand="Xiaomi">Xiaomi / Redmi</button>
+        </div>
+        <div class="catalog-filter-row">
+            <span class="catalog-result-count" id="catalogResultCount" aria-live="polite">Loading phones…</span>
+            <div class="catalog-filter-controls">
+                <label for="maxPriceFilter">Max price <select id="maxPriceFilter"><option value="all">Any price</option><option value="10000">Under ₹10,000</option><option value="20000">Under ₹20,000</option><option value="30000">Under ₹30,000</option><option value="50000">Under ₹50,000</option></select></label>
+                <label for="sortPhones">Sort by <select id="sortPhones"><option value="newest">Recently added</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option></select></label>
+            </div>
         </div>
     </div>
     <!-- 🛒 Main Catalog Content Display Workspace Frame -->
@@ -273,8 +296,9 @@
         </div>
         <div class="empty-alert-box" id="emptyState" style="display: none;">
             <span style="font-size: 3rem;">📦</span>
-            <h3 style="margin-top: 10px; color: var(--primary-color);">No Certified Stock Matches found</h3>
-            <p style="color: var(--text-light); margin-top: 4px;">Try modifying search keyword inputs or select alternative brand filters.</p>
+            <h3 style="margin-top: 10px; color: var(--primary-color);">No phones match these filters</h3>
+            <p style="color: var(--text-light); margin-top: 4px;">Clear a filter or try another model, brand or price range.</p>
+            <button id="resetCatalogFilters" type="button" class="btn btn-primary" style="margin-top:14px;">Clear filters</button>
         </div>
     </main>
 
@@ -295,6 +319,7 @@
                 </div>
                 <div>
                     <h4 style="color: var(--primary-color); font-size: 1.05rem; margin-bottom: 8px;">📊 Track My Buyback Submissions</h4>
+                    <p style="color:#64748b;font-size:.82rem;line-height:1.5;margin:-2px 0 10px;">See inspection updates here. If PhoneBandhu sends a final offer, accept or decline it before pickup is arranged.</p>
                     <div id="myListedPhonesContainer" style="max-height: 180px; overflow-y: auto; border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 8px; background: #fafafa; display: flex; flex-direction: column; gap: 6px;">
                         <p style="color: var(--text-light); font-size: 0.88rem;">No custom trade logs tracked locally.</p>
                     </div>
@@ -313,12 +338,12 @@
 
     <!-- PhoneBandhu phone value estimate form -->
     <div id="sellModal" class="modal-overlay">
-        <div class="modal-body-container" style="max-width:700px;">
+        <div class="modal-body-container" role="dialog" aria-modal="true" aria-labelledby="sellPhoneTitle" style="max-width:700px;">
             <div class="modal-header-panel">
-                <div><h3>Sell your phone</h3><small style="color:#d8e3ef">Get a quick PhoneBandhu estimate</small></div>
+                <div><h3 id="sellPhoneTitle">Sell your phone</h3><small style="color:#d8e3ef">Get an indicative estimate</small></div>
                 <button onclick="document.getElementById('sellModal').style.display='none';" class="modal-close-trigger">&times;</button>
             </div>
-            <form id="sellPhoneForm" class="modal-scrollable-form">
+            <form id="sellPhoneForm" class="modal-scrollable-form" method="post">
                 <h4 class="sell-step"><span>1</span> Tell us about your phone</h4>
                 <div class="form-group">
                     <label for="phoneBrand">Device Brand Name</label>
@@ -382,7 +407,7 @@
                 <div class="form-group"><label for="phoneLocation">Pickup city / town</label><input type="text" id="phoneLocation" autocomplete="address-level2" placeholder="e.g., Jaipur" required></div>
                 <div class="form-group"><label for="sellerAddress">Full pickup address</label><textarea id="sellerAddress" rows="2" autocomplete="street-address" placeholder="House / flat, street, area and landmark" required></textarea></div>
                 <label class="checklist-item"><input id="sellerConsent" type="checkbox" required> I confirm these details and phone condition are accurate, and agree to be contacted about this pickup.</label>
-                <button type="submit" class="btn btn-primary btn-full" style="padding: 13px; font-size: 1.05rem; background: var(--secondary-color);">Get my estimate &amp; request pickup</button>
+                <button type="submit" class="btn btn-primary btn-full" style="padding: 13px; font-size: 1.05rem; background: var(--secondary-color);">Submit buyback request</button>
             </form>
         </div>
     </div>
@@ -397,7 +422,7 @@
                 </div>
                 <button onclick="document.getElementById('checkoutModal').style.display = 'none';" class="modal-close-trigger">&times;</button>
             </div>
-            <form id="orderCheckoutForm" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 12px; margin: 0;">
+            <form id="orderCheckoutForm" method="post" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 12px; margin: 0;">
                 <div style="background: #f8fafc; padding: 10px 12px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-weight: 600; color: #475569; font-size: 0.9rem;">Total Payable Net Amount:</span>
                     <span id="checkoutProductPrice" style="font-size: 1.25rem; font-weight: 800; color: var(--secondary-color);">₹0</span>
@@ -431,6 +456,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=20261012-phonebandhu-brand-1"></script>
+    <script src="script.js?v=20261014-marketplace-1"></script>
 </body>
 </html>

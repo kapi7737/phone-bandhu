@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://cdn.socket.io; connect-src 'self' http://localhost:5200 http://127.0.0.1:5200 ws://localhost:5200 ws://127.0.0.1:5200 https://api.razorpay.com https://checkout.razorpay.com; frame-src https://*.razorpay.com">
     <title>Phone Bandhu | Admin Control Room</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://googleapis.com" rel="stylesheet">
@@ -42,10 +43,25 @@
             <img src="logo.png.jpg" alt="Phone Bandhu Logo" class="brand-logo">
             <div class="logo-text">Phone<span>Bandhu</span> Central Control</div>
         </div>
-        <div class="nav-buttons"><a href="index.html" class="btn btn-primary">Go to Website</a></div>
+        <div class="nav-buttons"><button id="adminLogoutBtn" type="button" class="btn btn-secondary" hidden>Sign out admin</button><a href="index.html" class="btn btn-primary">Go to Website</a></div>
     </header>
 
-    <main class="admin-wrapper">
+    <section id="adminLoginPanel" class="admin-wrapper" style="max-width:480px;" hidden>
+        <div class="data-section">
+            <h1 style="color:var(--primary-color);margin-bottom:8px;">Administrator sign in</h1>
+            <p style="color:#64748b;margin-bottom:20px;">Private inventory and customer data are available only to the configured administrator.</p>
+            <form id="adminLoginForm" method="post" style="display:grid;gap:12px;">
+                <label for="adminLoginEmail">Administrator email</label>
+                <input id="adminLoginEmail" type="email" autocomplete="username" required maxlength="254">
+                <label for="adminLoginPassword">Password</label>
+                <input id="adminLoginPassword" type="password" autocomplete="current-password" required maxlength="200">
+                <p id="adminLoginMessage" role="status" aria-live="polite" style="min-height:1.3em;color:#b42318;"></p>
+                <button class="btn btn-primary" type="submit">Sign in securely</button>
+            </form>
+        </div>
+    </section>
+
+    <main class="admin-wrapper" hidden>
         <div class="admin-header">
             <h1>PhoneBandhu Inventory Dashboard</h1>
             <p style="color: #059669; font-weight: 600;">🔒 PhoneBandhu Business Mode Active</p>
@@ -71,7 +87,7 @@
         <!-- PhoneBandhu doorstep customer order management -->
         <div class="data-section" style="border-left: 5px solid #d1aa4a;">
             <h2>📦 Incoming Customer Purchases (📦 ग्राहक के ऑर्डर्स)</h2>
-            <form id="adminPhoneForm" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:24px;">
+            <form id="adminPhoneForm" method="post" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:24px;">
                 <input name="brand" placeholder="Brand" required>
                 <input name="model" placeholder="Model" required>
                 <input name="price" type="number" min="1" placeholder="Price (₹)" required>
@@ -118,7 +134,7 @@
         <!-- सेक्शन 1: लाइव स्टॉक/इन्वेंट्री डिस्ट्रीब्यूशन पैनल -->
         <div class="data-section" style="border-left:5px solid #0d9488;">
             <h2>Phone Buyback Requests</h2>
-            <p style="color:#64748b;margin:-8px 0 16px;">Seller photos, contact and pickup details for phones awaiting inspection.</p>
+            <p style="color:#64748b;margin:-8px 0 16px;">Review the phone, record a final offer and contact the seller. Once they accept, confirm receipt and payment before the phone goes live in the shop.</p>
             <div style="overflow-x:auto;">
                 <table>
                     <thead><tr><th>Phone</th><th>Estimate</th><th>Photos</th><th>Seller contact</th><th>Pickup address</th><th>Reported condition</th><th>Status / action</th></tr></thead>
@@ -168,6 +184,25 @@
                 </table>
             </div>
         </div>
+
+        <section id="masterAdminTools" class="data-section" style="border-left:5px solid #7c3aed;" hidden>
+            <h2>Master Admin: Manage Admin Accounts</h2>
+            <p style="color:#64748b;margin:-8px 0 16px;">New admins remain pending until you approve them. Each admin action is recorded below.</p>
+            <p style="margin:0 0 16px;"><a href="admin-password-reset.html">Open admin password reset page</a></p>
+            <form id="createAdminForm" method="post" style="display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-bottom:18px;">
+                <label style="display:grid;gap:6px;">Admin email<input id="newAdminEmail" type="email" autocomplete="off" required maxlength="254"></label>
+                <label style="display:grid;gap:6px;">Initial password<input id="newAdminPassword" type="password" autocomplete="new-password" required minlength="12" maxlength="72"></label>
+                <button class="btn-approve" type="submit">Create Pending Admin</button>
+                <span id="adminManagementMessage" role="status" aria-live="polite"></span>
+            </form>
+            <div style="overflow-x:auto;margin-bottom:22px;">
+                <table><thead><tr><th>Email</th><th>Status</th><th>Created</th><th>Approval</th><th>Action</th></tr></thead><tbody id="managedAdminsTable"><tr><td colspan="5">Loading admin accounts...</td></tr></tbody></table>
+            </div>
+            <h2>Admin Activity Log</h2>
+            <div style="overflow-x:auto;">
+                <table><thead><tr><th>Time</th><th>Admin</th><th>Action</th><th>Target</th><th>Details</th></tr></thead><tbody id="adminAuditTable"><tr><td colspan="5">Loading admin activity...</td></tr></tbody></table>
+            </div>
+        </section>
     </main>
     <!-- PhoneBandhu live data sync -->
     <script type="text/plain" id="legacyAdminDashboard">
@@ -228,7 +263,7 @@
                 }
 
                 // 3. सीधे MongoDB से लाइव यूज़र्स डेटा फेच करना
-                fetch('http://localhost:5000/api/admin/users')
+                fetch(`${location.protocol === 'file:' || location.port === '5500' ? 'http://localhost:5200' : location.origin}/api/admin/users`)
                     .then(res => res.json())
                     .then(users => {
                         document.getElementById('countUsers').innerText = users.length;
@@ -291,7 +326,7 @@
         async function deleteUserDatabase(id) {
             if (confirm("क्या आप वाकई इस यूजर को डेटाबेस से हमेशा के लिए हटाना चाहते हैं?")) {
                 try {
-                    const response = await fetch(`http://localhost:5000/api/admin/users/${id}`, { method: 'DELETE' });
+                    const response = await fetch(`${location.protocol === 'file:' || location.port === '5500' ? 'http://localhost:5200' : location.origin}/api/admin/users/${id}`, { method: 'DELETE' });
                     const result = await response.json();
                     alert(result.message || "User data deleted successfully!");
                     loadAdminDashboard();
@@ -301,7 +336,6 @@
             }
         }
     </script>
-    <script src="admin.js?v=20261012-phonebandhu-brand-1"></script>
-    <script>loadAdminDashboard();</script>
+    <script src="admin.js?v=20261014-buyback-flow-2"></script>
 </body>
 </html>

@@ -13,7 +13,8 @@ const app = express();
 let mongoConnectionError = null;
 
 // Middleware - Handling image data parsing buffer limits securely
-app.use(cors());
+const allowedAppOrigins = new Set((process.env.APP_ORIGINS || 'http://localhost:5500,http://127.0.0.1:5500').split(',').map(value => value.trim()).filter(Boolean));
+app.use(cors({ origin: (origin, callback) => callback(null, !origin || allowedAppOrigins.has(origin)), credentials: true }));
 app.use(express.json({ limit: '10mb' })); 
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 // Serve the PhoneBandhu storefront from the backend origin as well as its API.
@@ -150,6 +151,46 @@ const orderSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 const Order = mongoose.model('Order', orderSchema);
+
+const adminSchema = new mongoose.Schema({
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    passwordHash: { type: String, required: true },
+    status: { type: String, enum: ['pending', 'approved', 'rejected', 'disabled'], default: 'pending' },
+    approvedBy: { type: String, default: '' },
+    createdAt: { type: Date, default: Date.now }
+});
+const Admin = mongoose.model('Admin', adminSchema);
+const auditSchema = new mongoose.Schema({ actorEmail: String, actorRole: String, action: String, targetType: String, targetId: String, details: mongoose.Schema.Types.Mixed, createdAt: { type: Date, default: Date.now } });
+const AdminAudit = mongoose.model('AdminAudit', auditSchema);
+const ADMIN_SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(48).toString('hex');
+const adminSessions = new Map();
+function cookieOptions(maxAge) { return `Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`; }
+function getAdminSession(req) {
+    const raw = String(req.headers.cookie || '').split(';').map(part => part.trim()).find(part => part.startsWith('pb_admin='))?.slice(9);
+    if (!raw) return null;
+    const [id, signature] = raw.split('.');
+    if (!id || !signature) return null;
+    const expected = crypto.createHmac('sha256', ADMIN_SESSION_SECRET).update(id).digest('hex');
+    const a = Buffer.from(signature), b = Buffer.from(expected);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+    const session = adminSessions.get(id);
+    if (!session || session.expires < Date.now()) { adminSessions.delete(id); return null; }
+    return session;
+}
+async function requireAdmin(req, res, next) {
+    const session = getAdminSession(req);
+    if (!session) return res.status(401).json({ message: 'Administrator sign in required.' });
+    if (session.role === 'admin') {
+        const account = await Admin.findById(session.adminId);
+        if (!account || account.status !== 'approved') { adminSessions.delete(session.id); res.setHeader('Set-Cookie', `pb_admin=; ${cookieOptions(0)}`); return res.status(403).json({ message: 'This admin account is no longer approved.' }); }
+    }
+    req.admin = session;
+    next();
+}
+function requireMaster(req, res, next) { if (req.admin?.role !== 'master') return res.status(403).json({ message: 'Master admin access required.' }); next(); }
+async function recordAdminAction(req, action, targetType, targetId, details = {}) {
+    await AdminAudit.create({ actorEmail: req.admin.email, actorRole: req.admin.role, action, targetType, targetId: String(targetId || ''), details });
+}
 
 // ==========================================
 // 🛣️ CUSTOMER AUTHENTICATION ROUTE ENDPOINTS
@@ -331,6 +372,78 @@ app.post('/api/auth/reset-password', async (req, res) => {
 // ==========================================
 
 // 4. Fetch Registered User Accounts
+app.post('/api/admin/login', async (req, res) => {
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const password = String(req.body.password || '');
+    try {
+        const masterEmail = String(process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+        const masterHash = String(process.env.ADMIN_PASSWORD_HASH || '');
+        let identity = null;
+        if (masterEmail && masterHash && email === masterEmail && await bcrypt.compare(password, masterHash)) identity = { email: masterEmail, role: 'master', adminId: null };
+        if (!identity) {
+            const account = await Admin.findOne({ email });
+            if (!account || account.status !== 'approved' || !(await bcrypt.compare(password, account.passwordHash))) return res.status(401).json({ message: 'Invalid credentials or this admin account is not approved.' });
+            identity = { email: account.email, role: 'admin', adminId: String(account._id) };
+        }
+        const id = crypto.randomBytes(32).toString('hex');
+        const expires = Date.now() + 8 * 60 * 60 * 1000;
+        adminSessions.set(id, { ...identity, id, expires });
+        const signature = crypto.createHmac('sha256', ADMIN_SESSION_SECRET).update(id).digest('hex');
+        res.setHeader('Set-Cookie', `pb_admin=${id}.${signature}; ${cookieOptions(8 * 60 * 60)}`);
+        res.json({ email: identity.email, role: identity.role });
+    } catch (err) { res.status(500).json({ message: 'Could not sign in administrator.' }); }
+});
+app.get('/api/admin/session', (req, res) => requireAdmin(req, res, () => res.json({ email: req.admin.email, role: req.admin.role })));
+app.post('/api/admin/logout', (req, res) => {
+    const session = getAdminSession(req);
+    if (session) adminSessions.delete(session.id);
+    res.setHeader('Set-Cookie', `pb_admin=; ${cookieOptions(0)}`);
+    res.json({ message: 'Signed out.' });
+});
+app.use('/api/admin', requireAdmin);
+app.use('/api/admin/admins', requireMaster);
+app.get('/api/admin/admins', async (req, res) => res.json(await Admin.find().select('-passwordHash').sort({ createdAt: -1 })));
+app.post('/api/admin/admins', async (req, res) => {
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const password = String(req.body.password || '');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 12 || password.length > 72) return res.status(400).json({ message: 'Enter a valid email and a password between 12 and 72 characters.' });
+    try {
+        if (email === String(process.env.ADMIN_EMAIL || '').trim().toLowerCase() || await Admin.exists({ email })) return res.status(409).json({ message: 'An administrator already uses this email.' });
+        const account = await Admin.create({ email, passwordHash: await bcrypt.hash(password, 12), status: 'pending' });
+        await recordAdminAction(req, 'admin_created', 'admin', account._id, { email, status: 'pending' });
+        res.status(201).json({ message: 'Admin account created and is pending approval.' });
+    } catch (err) { res.status(500).json({ message: 'Could not create admin account.' }); }
+});
+app.patch('/api/admin/admins/:id/status', async (req, res) => {
+    const { status } = req.body;
+    if (!['approved', 'rejected', 'disabled'].includes(status)) return res.status(400).json({ message: 'Invalid admin status.' });
+    try {
+        const account = await Admin.findById(req.params.id);
+        if (!account) return res.status(404).json({ message: 'Admin account not found.' });
+        const previousStatus = account.status;
+        account.status = status;
+        account.approvedBy = status === 'approved' ? req.admin.email : '';
+        await account.save();
+        for (const [id, session] of adminSessions) if (session.adminId === String(account._id)) adminSessions.delete(id);
+        await recordAdminAction(req, 'admin_status_changed', 'admin', account._id, { email: account.email, previousStatus, status });
+        res.json({ message: `Admin ${status}.` });
+    } catch (err) { res.status(500).json({ message: 'Could not update admin status.' }); }
+});
+app.patch('/api/admin/admins/:id/password', async (req, res) => {
+    const password = String(req.body.password || '');
+    if (password.length < 12 || password.length > 72) return res.status(400).json({ message: 'Password must be between 12 and 72 characters.' });
+    try {
+        const account = await Admin.findById(req.params.id);
+        if (!account) return res.status(404).json({ message: 'Admin account not found.' });
+        account.passwordHash = await bcrypt.hash(password, 12);
+        await account.save();
+        for (const [id, session] of adminSessions) if (session.adminId === String(account._id)) adminSessions.delete(id);
+        await recordAdminAction(req, 'admin_password_reset', 'admin', account._id, { email: account.email });
+        res.json({ message: 'Admin password reset. They must sign in again.' });
+    } catch (err) { res.status(500).json({ message: 'Could not reset admin password.' }); }
+});
+app.get('/api/admin/audit', async (req, res) => res.json(await AdminAudit.find().sort({ createdAt: -1 }).limit(500).lean()));
+
 app.get('/api/admin/users', async (req, res) => {
     try {
         const users = await User.find().select('-password').sort({ createdAt: -1 });
@@ -356,6 +469,7 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
     try {
         const order = await Order.findOneAndUpdate({ orderId: req.params.id }, { status: req.body.status }, { new: true, runValidators: true });
         if (!order) return res.status(404).json({ message: 'Order not found.' });
+        await recordAdminAction(req, 'order_status_changed', 'order', order.orderId, { status: order.status });
         res.json(order);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -391,6 +505,7 @@ app.post('/api/admin/phones', async (req, res) => {
         }
         const imageList = Array.isArray(images) ? images.filter(value => typeof value === 'string' && value.trim()).slice(0, 6) : [];
         const phone = await new Phone({ brand: brand.trim(), model: model.trim(), price: Number(price), location: location.trim(), condition: condition.trim(), images: imageList, image: imageList[0] || '', status: 'Available' }).save();
+        await recordAdminAction(req, 'phone_created', 'phone', phone._id, { brand: phone.brand, model: phone.model, price: phone.price });
         res.status(201).json(phone);
     } catch (err) {
         res.status(400).json({ message: err.message });
@@ -439,6 +554,7 @@ app.delete('/api/admin/phones/:id', async (req, res) => {
     try {
         const deletedPhone = await Phone.findByIdAndDelete(req.params.id);
         if (!deletedPhone) return res.status(404).json({ message: "Phone listing not found" });
+        await recordAdminAction(req, 'phone_deleted', 'phone', deletedPhone._id, { brand: deletedPhone.brand, model: deletedPhone.model });
         res.json({ message: "Phone listing deleted successfully!" });
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -450,6 +566,7 @@ app.delete('/api/admin/users/:id', async (req, res) => {
     try {
         const deletedUser = await User.findByIdAndDelete(req.params.id);
         if (!deletedUser) return res.status(404).json({ message: "User not found" });
+        await recordAdminAction(req, 'customer_deleted', 'customer', deletedUser._id, { email: deletedUser.email });
         res.json({ message: "User removed from database successfully!" });
     } catch (err) {
         res.status(500).json({ message: err.message });

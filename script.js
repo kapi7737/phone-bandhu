@@ -1,10 +1,16 @@
 // ⚡ Connect to the Node.js Live Socket Server Network Core
-const API_ORIGIN = window.location.protocol === 'file:' || window.location.port === '5500' ? 'http://localhost:5200' : window.location.origin;
+const API_ORIGIN = (() => {
+    if (window.location.protocol === 'file:') return 'http://localhost:5200';
+    if (window.location.port === '5500') return `${window.location.protocol}//${window.location.hostname}:5200`;
+    return window.location.origin;
+})();
 const socket = typeof io === 'function' ? io(API_ORIGIN) : null;
 const API_URL = `${API_ORIGIN}/api/phones`;
 let phoneData = [];
 let selectedBrand = 'all';
 let searchQuery = '';
+let selectedMaxPrice = 'all';
+let selectedSort = 'newest';
 
 function createPhoneBandhuId() {
     return `PB-${crypto.randomUUID().replaceAll('-', '').slice(0, 12).toUpperCase()}`;
@@ -18,6 +24,14 @@ const searchInput = document.getElementById('searchInput');
 const brandChips = document.querySelectorAll('.chip');
 const emptyState = document.getElementById('emptyState');
 const heroBrowseBtn = document.getElementById('heroBrowseBtn');
+
+document.getElementById('navSellPhoneBtn')?.addEventListener('click', () => { if (modal) modal.style.display = 'flex'; });
+modal?.addEventListener('click', event => { if (event.target === modal) modal.style.display = 'none'; });
+document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        if (overlay.style.display === 'flex') { overlay.style.display = 'none'; if (overlay.id === 'phoneDetailsModal') overlay.setAttribute('aria-hidden', 'true'); }
+    });
+});
 
 function getCurrentUser() { try { return JSON.parse(localStorage.getItem('currentUser') || 'null'); } catch { return null; } }
 function scopedStorageKey(kind, email) { return `phoneBandhu_${kind}_${encodeURIComponent(String(email || 'guest').trim().toLowerCase())}`; }
@@ -151,12 +165,12 @@ function ensureAccountOrdersSection() {
             const confirmPassword = fields.get('confirmPassword');
             const message = changeForm.querySelector('.account-password-message');
             if (newPassword !== confirmPassword) { message.textContent = 'New password and confirmation do not match.'; message.dataset.state = 'error'; return; }
-            if (newPassword.length < 8) { message.textContent = 'New password must be at least 8 characters.'; message.dataset.state = 'error'; return; }
+            if (newPassword.length < 12) { message.textContent = 'New password must be at least 12 characters.'; message.dataset.state = 'error'; return; }
             const submit = changeForm.querySelector('.account-password-submit');
             submit.disabled = true; submit.textContent = 'Updating…'; message.textContent = '';
             try {
                 const user = getCurrentUser();
-                const response = await fetch(`${API_ORIGIN}/api/account/change-password`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: user?.email, currentPassword, newPassword }) });
+                const response = await fetch(`${API_ORIGIN}/api/account/change-password`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ currentPassword, newPassword }) });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.message || 'Password could not be changed.');
                 message.textContent = result.message || 'Password changed successfully.'; message.dataset.state = 'success';
@@ -210,7 +224,7 @@ function renderSavedListings(user = getCurrentUser()) {
 
 async function loadPhoneBandhuProfile(currentUser) {
     try {
-        const response = await fetch(`${API_ORIGIN}/api/account/profile?email=${encodeURIComponent(currentUser.email || '')}`);
+        const response = await fetch(`${API_ORIGIN}/api/account/profile`, { credentials: 'include' });
         const result = await response.json();
         if (!response.ok) throw new Error(result.message || 'Could not load profile.');
         const updatedUser = { ...currentUser, ...result };
@@ -230,13 +244,9 @@ async function loadMyOrders(userEmail) {
     if (!container) return;
     container.innerHTML = '<p class="account-empty-state">Loading your orders…</p>';
     try {
-        const response = await fetch(`${API_ORIGIN}/api/orders?email=${encodeURIComponent(userEmail || '')}`);
+        const response = await fetch(`${API_ORIGIN}/api/orders`, { credentials: 'include' });
         const orders = await response.json();
         if (!response.ok) throw new Error(orders.message || 'Could not load your orders.');
-        let localOrders = [];
-        try { localOrders = JSON.parse(localStorage.getItem('phoneBandhuOrders') || '[]'); } catch {}
-        const knownOrderIds = new Set(orders.map(order => order.orderId));
-        localOrders.filter(order => order.customerEmail === userEmail && !knownOrderIds.has(order.orderId)).forEach(order => orders.push(order));
         orders.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
         count.textContent = `${orders.length} ${orders.length === 1 ? 'order' : 'orders'}`;
         container.innerHTML = '';
@@ -264,37 +274,60 @@ function escapeAccountHtml(value) {
     return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 }
 
-function renderUserOwnedPhones(userEmail) {
+async function renderUserOwnedPhones(userEmail) {
     const container = document.getElementById('myListedPhonesContainer');
     if (!container) return;
-
-    let localList = [];
+    container.innerHTML = '<p class="account-empty-state">Loading your buyback requests…</p>';
     try {
-        localList = JSON.parse(localStorage.getItem('phoneListings')) || [];
-    } catch (error) {
-        localStorage.removeItem('phoneListings');
-    }
-    localList = localList.filter(item => item.sellerEmail === userEmail);
-    container.innerHTML = '';
-
-    if (localList.length === 0) {
-        container.innerHTML = `<p style="color: #64748b; font-size: 0.9rem; padding: 5px;">No active phone listings found.</p>`;
-    } else {
-        localList.forEach(item => {
-            const div = document.createElement('div');
-            div.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding: 6px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem;";
-            div.innerHTML = `
-                <span><b>${item.brand}</b> - ${item.model}</span>
-                <span style="color:#0d9488; font-weight:700;">₹${parseInt(item.expectedPrice).toLocaleString('en-IN')}</span>
-            `;
-            container.appendChild(div);
+        const response = await fetch(`${API_ORIGIN}/api/account/buybacks`, { credentials: 'include' });
+        const requests = await response.json();
+        if (!response.ok) throw new Error(requests.message || 'Could not load buyback updates.');
+        if (!requests.length) {
+            container.innerHTML = '<div class="account-empty-state"><strong>No buyback requests yet</strong><span>Your estimate requests and status updates will appear here.</span></div>';
+            return;
+        }
+        const esc = escapeAccountHtml;
+        const statusNotes = {
+            'Pending Valuation Approval': 'Request received. PhoneBandhu will review the details.',
+            'Inspection In Progress': 'The team is reviewing the phone details and photos.',
+            'Offer Awaiting Seller': 'Review the final offer below and choose whether to accept it.',
+            'Offer Accepted': 'Offer accepted. PhoneBandhu will contact you to arrange handover.',
+            'Offer Declined': 'You declined this offer. No handover will be arranged.',
+            'Available': 'PhoneBandhu confirmed receipt and payment for this phone.'
+        };
+        container.innerHTML = requests.map(request => {
+            const offer = Number(request.offerPrice || 0);
+            const isPendingOffer = request.status === 'Offer Awaiting Seller' && offer > 0;
+            const amount = offer > 0 ? `Final offer: ₹${offer.toLocaleString('en-IN')}` : Number(request.price || 0) > 0 ? `Estimate: ₹${Number(request.price).toLocaleString('en-IN')}` : 'Estimate after inspection';
+            return `<article class="account-buyback-card"><div class="account-buyback-top"><strong>${esc(request.brand)} ${esc(request.model)}</strong><span class="account-status-pill is-active">${esc(request.status)}</span></div><p>${esc(amount)}</p><small>${esc(statusNotes[request.status] || 'Contact PhoneBandhu for an update.')}</small>${isPendingOffer ? `<div class="account-buyback-actions"><button type="button" class="account-buyback-accept" data-buyback-id="${esc(request._id)}" data-decision="accept">Accept offer</button><button type="button" class="account-buyback-decline" data-buyback-id="${esc(request._id)}" data-decision="decline">Decline</button></div>` : ''}</article>`;
+        }).join('');
+        container.querySelectorAll('[data-decision]').forEach(button => {
+            button.addEventListener('click', () => decideBuybackOffer(
+                button.dataset.buybackId,
+                button.dataset.decision,
+                button.closest('.account-buyback-card')?.querySelector('strong')?.textContent || 'this phone'
+            ));
         });
+    } catch (error) {
+        container.innerHTML = `<div class="account-empty-state"><strong>Could not load buyback updates</strong><span>${escapeAccountHtml(error.message)}</span></div>`;
     }
+}
+
+async function decideBuybackOffer(id, decision, model) {
+    if (decision === 'accept' && !confirm(`Confirm that you accept PhoneBandhu's final offer for ${model}? The team will contact you to arrange pickup.`)) return;
+    if (decision === 'decline' && !confirm(`Decline the final offer for ${model}?`)) return;
+    try {
+        const response = await fetch(`${API_ORIGIN}/api/account/buybacks/${encodeURIComponent(id)}/decision`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ decision }) });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Could not save your decision.');
+        await renderUserOwnedPhones(getCurrentUser()?.email);
+    } catch (error) { alert(error.message || 'Could not save your decision.'); }
 }
 
 // 📌 लॉगआउट (Logout) करने का लॉजिक
 document.body.addEventListener('click', function(e) {
     if (e.target && e.target.id === 'logoutBtn') {
+        fetch(`${API_ORIGIN}/api/auth/logout`, { method: 'POST', credentials: 'include', keepalive: true }).catch(() => {});
         localStorage.removeItem('currentUser'); // Session saaf karein
         alert('🔒 आप सफलतापूर्वक लॉगआउट हो चुके हैं।');
         window.location.reload();
@@ -303,6 +336,7 @@ document.body.addEventListener('click', function(e) {
 
 document.addEventListener('DOMContentLoaded', () => {
     checkUserSession();
+    if (new URLSearchParams(location.search).get('sell') === '1' && getCurrentUser()) modal?.style.setProperty('display', 'flex');
 });
 
 // --- ब्रांड्स की मार्केट बेस प्राइस ---
@@ -379,10 +413,10 @@ async function fetchPhonesFromBackend() {
             throw new Error("Backend error");
         }
     } catch (err) {
-        console.warn('Backend offline, loading from LocalStorage...');
-        phoneData = JSON.parse(localStorage.getItem('phoneListings')) || [];
+        console.error('PhoneBandhu API is unavailable:', err);
+        phoneData = [];
         const stockStatus = document.getElementById('stockStatus');
-        if (stockStatus) stockStatus.textContent = 'Showing saved stock · reconnecting to server';
+        if (stockStatus) stockStatus.textContent = 'Store is temporarily unavailable · reconnecting to server';
     }
     renderListings();
 }
@@ -393,11 +427,23 @@ function renderListings() {
 
     const filteredPhones = phoneData.filter(phone => {
         if (phone.status && phone.status !== 'Available') return false;
-        const matchesBrand = (selectedBrand === 'all' || phone.brand === selectedBrand);
-        const searchString = `${phone.brand || ''} ${phone.model || ''} ${phone.location || ''}`.toLowerCase();
+        const brandAliases = { iPhone: ['apple', 'iphone'], Samsung: ['samsung', 'galaxy'], Xiaomi: ['xiaomi', 'redmi'] };
+        const matchesBrand = selectedBrand === 'all' || (brandAliases[selectedBrand] || [selectedBrand.toLowerCase()]).some(alias => `${phone.brand || ''} ${phone.model || ''}`.toLowerCase().includes(alias.toLowerCase()));
+        const searchString = `${phone.brand || ''} ${phone.model || ''} ${phone.location || ''} ${phone.storage || ''} ${phone.condition || ''}`.toLowerCase();
         const matchesSearch = searchString.includes(searchQuery.toLowerCase());
-        return matchesBrand && matchesSearch;
+        const price = Number(phone.price || phone.expectedPrice || 0);
+        const matchesPrice = selectedMaxPrice === 'all' || price < Number(selectedMaxPrice);
+        return matchesBrand && matchesSearch && matchesPrice;
     });
+
+    filteredPhones.sort((a, b) => {
+        const priceA = Number(a.price || a.expectedPrice || 0), priceB = Number(b.price || b.expectedPrice || 0);
+        if (selectedSort === 'price-low') return priceA - priceB;
+        if (selectedSort === 'price-high') return priceB - priceA;
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+    });
+    const resultCount = document.getElementById('catalogResultCount');
+    if (resultCount) resultCount.textContent = `${filteredPhones.length} phone${filteredPhones.length === 1 ? '' : 's'} found`;
 
     if (filteredPhones.length === 0) {
         if (emptyState) emptyState.style.display = 'block';
@@ -461,7 +507,7 @@ function renderListings() {
                         
                         <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px;">
                             <span style="background: #eff6ff; color: #1e40af; font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 6px;">
-                                ⚙️ 32-Point Inspected
+                        ${phoneImages.length} real photo${phoneImages.length === 1 ? '' : 's'}
                             </span>
                             <span style="background: #f0fdf4; color: #166534; font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 6px;">
                                 ${phone.condition || 'Refurbished'}
@@ -471,9 +517,6 @@ function renderListings() {
 
                     <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 5px;">
                         <div style="display: flex; flex-direction: column;">
-                            <span style="font-size: 0.8rem; color: #64748b; text-decoration: line-through; margin-bottom: -2px;">
-                                ₹${Math.round(itemPrice * 1.45).toLocaleString('en-IN')}
-                            </span>
                             <span style="font-size: 1.5rem; font-weight: 800; color: #0d9488; font-family: sans-serif;">
                                 ₹${parseInt(itemPrice).toLocaleString('en-IN')}
                             </span>
@@ -542,7 +585,7 @@ function openPhoneDetails(phone) {
             <div class="phone-gallery-thumbs" aria-label="Phone photos">${images.map((src,index) => `<button type="button" class="phone-gallery-thumb${index === 0 ? ' active' : ''}" data-photo-index="${index}" aria-label="Show photo ${index + 1}"><img src="${esc(src)}" alt=""></button>`).join('')}</div>
         </div>
         <div class="phone-detail-info">
-            <div><small style="color:#a17c2e;font-weight:800;letter-spacing:.1em">PHONEBANDHU CERTIFIED</small><h2 id="phoneDetailTitle">${esc(title)}</h2></div>
+            <div><small style="color:#a17c2e;font-weight:800;letter-spacing:.1em">PHONEBANDHU LISTING</small><h2 id="phoneDetailTitle">${esc(title)}</h2></div>
             <div class="phone-detail-price">₹${price.toLocaleString('en-IN')}</div>
             <div class="phone-detail-meta">
                 <div><small>Brand</small><strong>${esc(phone.brand || '—')}</strong></div>
@@ -630,6 +673,7 @@ document.getElementById('orderCheckoutForm')?.addEventListener('submit', async f
     try {
         const response = await fetch(`${API_ORIGIN}/api/orders`, {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(orderPayload)
         });
@@ -637,10 +681,8 @@ document.getElementById('orderCheckoutForm')?.addEventListener('submit', async f
         if (!response.ok) throw new Error(savedOrder.message || 'Order save failed');
         confirmedOrderId = savedOrder.orderId;
     } catch (error) {
-        let currentOrders = [];
-        try { currentOrders = JSON.parse(localStorage.getItem('phoneBandhuOrders')) || []; } catch {}
-        currentOrders.push(orderPayload);
-        localStorage.setItem('phoneBandhuOrders', JSON.stringify(currentOrders));
+        alert(`Order was not saved: ${error.message || 'Could not reach the server.'}`);
+        return;
     }
 
     alert(`🎉 बधाई हो! आपका ऑर्डर सफल रहा!\nआपका Order ID: ${confirmedOrderId}\nहमारी टीम वेरिफिकेशन के लिए जल्द ही आपसे संपर्क करेगी।`);
@@ -665,7 +707,7 @@ if (form) {
         event.preventDefault();
         let currentUser=null;
         try { currentUser=JSON.parse(localStorage.getItem('currentUser')||'null'); } catch {}
-        if(!currentUser){alert('Please log in before requesting a phone pickup.');window.location.href='auth.html';return;}
+        if(!currentUser){sessionStorage.setItem('phoneBandhuReturnTo','index.html?sell=1');window.location.href='auth.html';return;}
         const files=[...document.getElementById('phoneImage').files];
         if(files.length<1||files.length>6||files.some(file=>!file.type.startsWith('image/')||file.size>1024*1024)){
             alert('Please add 1 to 6 phone photos, each up to 1 MB.');return;
@@ -692,12 +734,9 @@ if (form) {
                 pickupAddress:document.getElementById('sellerAddress').value.trim(),
                 status:'Pending Valuation Approval'
             };
-            const response=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+            const response=await fetch(API_URL,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
             const result=await response.json();
             if(!response.ok)throw new Error(result.message||'Could not submit your pickup request.');
-            const localList=JSON.parse(localStorage.getItem('phoneListings')||'[]');
-            localList.push({...payload,id:result._id||Date.now()});
-            localStorage.setItem('phoneListings',JSON.stringify(localList));
             alert('Your PhoneBandhu pickup request is submitted. The team will contact you to confirm the inspection and final offer.');
             form.reset();document.getElementById('sellPhotoPreviews').replaceChildren();
             document.getElementById('suggestedPriceDisplay').textContent='Select a model';
@@ -705,19 +744,30 @@ if (form) {
             await fetchPhonesFromBackend();
         } catch(error) {
             alert(error.message||'Could not submit the request. Check the backend connection and try again.');
-        } finally {submitButton.disabled=false;submitButton.textContent='Get my estimate & request pickup';}
+        } finally {submitButton.disabled=false;submitButton.textContent='Submit buyback request';}
     });
 }
 
 if (searchInput) {
     searchInput.addEventListener('input', (e) => { searchQuery = e.target.value; renderListings(); });
 }
+document.getElementById('maxPriceFilter')?.addEventListener('change', event => { selectedMaxPrice = event.target.value; renderListings(); });
+document.getElementById('sortPhones')?.addEventListener('change', event => { selectedSort = event.target.value; renderListings(); });
+document.getElementById('resetCatalogFilters')?.addEventListener('click', () => {
+    selectedBrand = 'all'; searchQuery = ''; selectedMaxPrice = 'all'; selectedSort = 'newest';
+    if (searchInput) searchInput.value = '';
+    const priceFilter = document.getElementById('maxPriceFilter'); if (priceFilter) priceFilter.value = 'all';
+    const sortFilter = document.getElementById('sortPhones'); if (sortFilter) sortFilter.value = 'newest';
+    brandChips.forEach(chip => { const active = chip.dataset.brand === 'all'; chip.classList.toggle('active', active); chip.setAttribute('aria-pressed', String(active)); });
+    renderListings();
+});
 
 // ब्रांड चिप्स फ़िल्टर लॉजिक मैनेजमेंट
 brandChips.forEach(chip => {
     chip.addEventListener('click', (e) => {
-        brandChips.forEach(c => c.classList.remove('active'));
+        brandChips.forEach(c => { c.classList.remove('active'); c.setAttribute('aria-pressed', 'false'); });
         e.target.classList.add('active');
+        e.target.setAttribute('aria-pressed', 'true');
         selectedBrand = e.target.getAttribute('data-brand');
         renderListings();
     });
